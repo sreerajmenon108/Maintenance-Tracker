@@ -3072,6 +3072,29 @@
             });
         }
 
+        function exportDataAsCSV() {
+            const tickets = getTickets();
+            if (tickets.length === 0) {
+                alert("No ticket data available to export.");
+                return;
+            }
+
+            let csvContent = "Ticket ID,Resident,Tower,Apartment,Start Date,Status,Description\n";
+            tickets.forEach(t => {
+                const cleanDesc = `"${t.desc.replace(/"/g, '""')}"`;
+                csvContent += `${t.id},${t.resident},${t.tower},${t.apt},${t.date},${t.status},${cleanDesc}\n`;
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('href', url);
+            a.setAttribute('download', `Kent_Mahal_Maintenance_Tickets_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
         initCredentials();
         initStorage();
         populateResidentDropdown();
