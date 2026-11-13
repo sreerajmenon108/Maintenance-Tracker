@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kent Mahal - Maintenance Portal</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            800: '#166534',
+                            900: '#14532d',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col font-sans antialiased">
+
+    <!-- Top Navbar -->
+    <header class="bg-brand-900 text-white shadow-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <svg class="w-8 h-8 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                </svg>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight tracking-wide">Kent Mahal</h1>
+                    <p class="text-xs text-brand-200">Apartment Maintenance Portal</p>
+                </div>
+            </div>
+            <div id="user-session-bar" class="hidden flex items-center space-x-4">
+                <span id="session-info" class="text-sm bg-brand-800 px-3 py-1.5 rounded-lg border border-brand-700"></span>
+                <button onclick="logout()" class="text-xs bg-red-600 hover:bg-red-700 text-white font-medium px-3 py-1.5 rounded-lg transition">Logout</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+        <!-- AUTH VIEW (Login Selection & Form) -->
+        <div id="auth-view" class="max-w-md mx-auto bg-white rounded-2xl shadow-xl border border-slate-100 p-8 mt-10">
+            <div class="text-center mb-8">
+                <h2 class="text-2xl font-bold text-slate-900">Welcome to Kent Mahal</h2>
+                <p class="text-sm text-slate-500 mt-1">Please sign in to access the maintenance portal</p>
+            </div>
+
+            <!-- Role Selector Tabs -->
+            <div class="flex rounded-xl bg-slate-100 p-1 mb-6">
+                <button id="tab-resident" onclick="switchLoginTab('resident')" class="flex-1 py-2 text-sm font-semibold rounded-lg bg-white text-brand-900 shadow-sm transition">Resident Portal</button>
+                <button id="tab-admin" onclick="switchLoginTab('admin')" class="flex-1 py-2 text-sm font-semibold rounded-lg text-slate-600 hover:text-slate-900 transition">Admin Portal</button>
+            </div>
+
+            <!-- Resident LoginForm -->
+            <form id="form-resident" onsubmit="handleLogin(event, 'resident')" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Select User Profile</label>
+                    <select id="resident-username" required class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 bg-white">
+                        <option value="Resident1">Resident 1 (Tower 5, 8A1)</option>
+                        <option value="Resident2">Resident 2 (Tower 5, 8A2)</option>
+                        <option value="Resident3">Resident 3 (Tower 5, 8B1)</option>
+                        <option value="Resident4">Resident 4 (Tower 5, 9C1)</option>
+                        <option value="Resident5">Resident 5 (Tower 5, 10A1)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Password</label>
+                    <input type="password" id="resident-password" required placeholder="Enter password (e.g. Resident1)" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500">
+                    <p class="text-xs text-slate-400 mt-1">Hint: Match password to username (e.g., Resident1 for Resident 1)</p>
+                </div>
+                <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-2.5 rounded-xl transition shadow-lg shadow-brand-500/20">Login as Resident</button>
+            </form>
+
+            <!-- Admin LoginForm -->
+            <form id="form-admin" onsubmit="handleLogin(event, 'admin')" class="space-y-4 hidden">
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Admin Username</label>
+                    <input type="text" value="admin" disabled class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-500 cursor-not-allowed">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Admin Password</label>
+                    <input type="password" id="admin-password" required placeholder="Enter admin password" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500">
+                    <p class="text-xs text-slate-400 mt-1">Password saved in code: <code class="bg-slate-100 px-1 py-0.5 rounded text-slate-600">AdminPwd123</code></p>
+                </div>
+                <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold py-2.5 rounded-xl transition shadow-lg">Login as Administrator</button>
+            </form>
+
+            <div id="login-error" class="mt-4 text-center text-xs text-red-600 font-medium hidden"></div>
+        </div>
+
+        <!-- RESIDENT PORTAL VIEW -->
+        <div id="resident-view" class="hidden space-y-8">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Left: Ticket Registration Form -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                    <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center">
+                        <svg class="w-5 h-5 text-brand-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        Register New Maintenance Ticket
+                    </h3>
+                    <form onsubmit="handleTicketSubmit(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Tower (1 to 6)</label>
+                            <select id="ticket-tower" required class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 bg-white">
+                                <option value="1">Tower 1</option>
+                                <option value="2">Tower 2</option>
+                                <option value="3">Tower 3</option>
+                                <option value="4">Tower 4</option>
+                                <option value="5" selected>Tower 5</option>
+                                <option value="6">Tower 6</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Apartment Number</label>
+                            <input type="text" id="ticket-apt" required placeholder="e.g. 8A1, 8A2, 8A3..." class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Start Date of Issue</label>
+                            <input type="date" id="ticket-date" required class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Issue Description</label>
+                            <textarea id="ticket-desc" rows="3" required placeholder="Describe the maintenance problem clearly..." class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500"></textarea>
+                        </div>
+                        <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-2.5 rounded-xl transition shadow-md shadow-brand-500/20">Submit Ticket</button>
+                    </form>
+                </div>
+
+                <!-- Right: Resident Tickets & Status Tracker -->
+                <div class="lg:col-span-2 space-y-6">
+                    <!-- Status Count Summary Cards -->
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4" id="resident-stats">
+                        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                            <p class="text-xs text-slate-500 uppercase font-semibold">Total Registered</p>
+                            <p id="stat-total" class="text-2xl font-bold text-slate-900 mt-1">0</p>
+                        </div>
+                        <div class="bg-amber-50 p-4 rounded-xl border border-amber-200 shadow-sm">
+                            <p class="text-xs text-amber-700 uppercase font-semibold">Open / In Progress</p>
+                            <p id="stat-active" class="text-2xl font-bold text-amber-800 mt-1">0</p>
+                        </div>
+                        <div class="bg-emerald-50 p-4 rounded-xl border border-emerald-200 shadow-sm">
+                            <p class="text-xs text-emerald-700 uppercase font-semibold">Resolved / Closed</p>
+                            <p id="stat-done" class="text-2xl font-bold text-emerald-800 mt-1">0</p>
+                        </div>
+                    </div>
+
+                    <!-- Resident Tickets Table -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+                            <h3 class="font-bold text-slate-900">Your Registered Tickets</h3>
+                            <span id="resident-ticket-count" class="text-xs bg-slate-100 px-2.5 py-1 rounded-full text-slate-600 font-medium">0 tickets</span>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse text-sm">
+                                <thead>
+                                    <tr class="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold text-xs uppercase tracking-wider">
+                                        <th class="py-3 px-4">ID</th>
+                                        <th class="py-3 px-4">Tower</th>
+                                        <th class="py-3 px-4">Apartment</th>
+                                        <th class="py-3 px-4">Issue Description</th>
+                                        <th class="py-3 px-4">Start Date</th>
+                                        <th class="py-3 px-4">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="resident-tickets-tbody" class="divide-y divide-slate-100 text-slate-700">
+                                    <!-- Injected dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ADMIN PORTAL VIEW -->
+        <div id="admin-view" class="hidden space-y-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-900">Admin Control Panel - All Association Tickets</h3>
+                    <p class="text-xs text-slate-500 mt-0.5">Manage and update statuses according to maintenance team feedback.</p>
+                </div>
+                <button onclick="exportDataAsCSV()" class="inline-flex items-center space-x-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-4 py-2 rounded-xl text-sm transition shadow-sm">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                    <span>Export to Excel/CSV (.csv)</span>
+                </button>
+            </div>
+
+            <!-- Admin Filters & Stats -->
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <p class="text-xs text-slate-500 uppercase font-semibold">Total System Tickets</p>
+                    <p id="admin-stat-total" class="text-2xl font-bold text-slate-900 mt-1">0</p>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <p class="text-xs text-amber-600 uppercase font-semibold">Open / In Progress</p>
+                    <p id="admin-stat-open" class="text-2xl font-bold text-amber-600 mt-1">0</p>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <p class="text-xs text-emerald-600 uppercase font-semibold">Resolved / Closed</p>
+                    <p id="admin-stat-resolved" class="text-2xl font-bold text-emerald-600 mt-1">0</p>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-center">
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Filter by Status</label>
+                    <select id="admin-status-filter" onchange="renderAdminTicketsTable()" class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs bg-white focus:ring-2 focus:ring-brand-500">
+                        <option value="ALL">All Statuses</option>
+                        <option value="Registered">Registered</option>
+                        <option value="Open">Open</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Closed">Closed</option>
+                        <option value="Resolved">Resolved</option>
+                        <option value="Rejected">Rejected</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Admin Table -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-sm">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold text-xs uppercase tracking-wider">
+                                <th class="py-3 px-4">Ticket ID</th>
+                                <th class="py-3 px-4">Resident</th>
+                                <th class="py-3 px-4">Tower</th>
+                                <th class="py-3 px-4">Apt</th>
+                                <th class="py-3 px-4">Description</th>
+                                <th class="py-3 px-4">Start Date</th>
+                                <th class="py-3 px-4">Status Update</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-tickets-tbody" class="divide-y divide-slate-100 text-slate-700">
+                            <!-- Injected dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <hr class="border-slate-200 my-8">
+
+        <!-- BUILT-IN DATABASE TABLE VIEW (Central DB State Viewer) -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-4">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-100 pb-4">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-900 flex items-center space-x-2">
+                        <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.58 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.58 4 8 4s8-1.79 8-4M4 7c0-2.21 3.58-4 8-4s8 1.79 8 4m0 5c0 2.21-3.58 4-8 4s-8-1.79-8-4"></path></svg>
+                        <span>Central Database Table Schema & Master Records</span>
+                    </h3>
+                    <p class="text-xs text-slate-500 mt-1">This underlying database table consumes and stores all ticket transactions between Resident and Admin portals. Ready for seamless cloud DB (PostgreSQL/MySQL/Firebase) migration.</p>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button onclick="resetDatabaseTable()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium px-3 py-1.5 rounded-lg transition border border-slate-300">Reset DB to Defaults</button>
+                    <span class="text-xs bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-1.5 rounded-lg font-semibold">Table Live: 3 NF Compliant</span>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto rounded-xl border border-slate-200">
+                <table class="w-full text-left border-collapse text-xs font-mono">
+                    <thead>
+                        <tr class="bg-slate-900 text-white font-bold uppercase tracking-wider">
+                            <th class="py-2.5 px-3">id (PK)</th>
+                            <th class="py-2.5 px-3">resident_id</th>
+                            <th class="py-2.5 px-3">tower</th>
+                            <th class="py-2.5 px-3">apartment</th>
+                            <th class="py-2.5 px-3">start_date</th>
+                            <th class="py-2.5 px-3">status</th>
+                            <th class="py-2.5 px-3">description</th>
+                        </tr>
+                    </thead>
+                    <tbody id="db-raw-tbody" class="divide-y divide-slate-200 bg-slate-50/50 text-slate-800">
+                        <!-- Database records populated here -->
+                    </tbody>
+                </table>
+            </div>
+            <p class="text-[11px] text-slate-400 italic">* Note: When migrating to a cloud database (such as PostgreSQL or MySQL), this exact schema structure <code class="bg-slate-100 px-1 rounded text-slate-600">(id, resident_id, tower, apartment, start_date, status, description)</code> maps directly into your SQL table columns.</p>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-auto bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-500">
+        Kent Mahal Apartment Owners Association &bull; Maintenance Tracking System
+    </footer>
+
+    <!-- Application Script Logic -->
+    <script>
+        // --- HARDCODED CREDENTIALS & STORAGE SCHEMA ---
+        const CREDENTIALS = {
+            admin: { password: "AdminPwd123" },
+            residents: {
+                "Resident1": { password: "Resident1", tower: "5", apt: "8A1" },
+                "Resident2": { password: "Resident2", tower: "5", apt: "8A2" },
+                "Resident3": { password: "Resident3", tower: "5", apt: "8B1" },
+                "Resident4": { password: "Resident4", tower: "5", apt: "9C1" },
+                "Resident5": { password: "Resident5", tower: "5", apt: "10A1" }
+            }
+        };
+
+        const VALID_STATUSES = ["Registered", "Open", "In Progress", "Closed", "Resolved", "Rejected"];
+
+        // Current session state
+        let currentSession = null; // { role: 'resident'|'admin', username: '...' }
+
+        // Initialize local storage table if empty with sample data
+        function initStorage() {
+            if (!localStorage.getItem('kent_mahals_tickets')) {
+                const sampleTickets = [
+                    { id: "KM-1001", resident: "Resident1", tower: "5", apt: "8A1", date: "2026-11-01", desc: "Main lobby corridor light flickering near flat entrance.", status: "In Progress" },
+                    { id: "KM-1002", resident: "Resident2", tower: "5", apt: "8A2", date: "2026-11-05", desc: "Basement parking slot water seepage during heavy rain.", status: "Open" },
+                    { id: "KM-1003", resident: "Resident3", tower: "5", apt: "8B1", date: "2026-11-08", desc: "Lift intercom audio distortion on floor 8.", status: "Registered" }
+                ];
+                localStorage.setItem('kent_mahals_tickets', JSON.stringify(sampleTickets));
+            }
+        }
+
+        function getTickets() {
+            return JSON.parse(localStorage.getItem('kent_mahals_tickets')) || [];
+        }
+
+        function saveTickets(tickets) {
+            localStorage.setItem('kent_mahals_tickets', JSON.stringify(tickets));
+            renderDatabaseTableViewer(); // Keep central DB table viewer in sync
+        }
+
+        function resetDatabaseTable() {
+            if (confirm("Are you sure you want to reset the database table to initial sample records?")) {
+                localStorage.removeItem('kent_mahals_tickets');
+                initStorage();
+                refreshActiveViews();
+                alert("Database table has been reset successfully.");
+            }
+        }
+
+        // --- AUTHENTICATION & TABS ---
+        function switchLoginTab(role) {
+            const tabRes = document.getElementById('tab-resident');
+            const tabAdm = document.getElementById('tab-admin');
+            const formRes = document.getElementById('form-resident');
+            const formAdm = document.getElementById('form-admin');
+            const errDiv = document.getElementById('login-error');
+            errDiv.classList.add('hidden');
+
+            if (role === 'resident') {
+                tabRes.className = "flex-1 py-2 text-sm font-semibold rounded-lg bg-white text-brand-900 shadow-sm transition";
+                tabAdm.className = "flex-1 py-2 text-sm font-semibold rounded-lg text-slate-600 hover:text-slate-900 transition";
+                formRes.classList.remove('hidden');
+                formAdm.classList.add('hidden');
+            } else {
+                tabAdm.className = "flex-1 py-2 text-sm font-semibold rounded-lg bg-white text-slate-900 shadow-sm transition";
+                tabRes.className = "flex-1 py-2 text-sm font-semibold rounded-lg text-slate-600 hover:text-slate-900 transition";
+                formAdm.classList.remove('hidden');
+                formRes.classList.add('hidden');
+            }
+        }
+
+        function handleLogin(event, role) {
+            event.preventDefault();
+            const errDiv = document.getElementById('login-error');
+            errDiv.classList.add('hidden');
+
+            if (role === 'resident') {
+                const username = document.getElementById('resident-username').value;
+                const pwd = document.getElementById('resident-password').value;
+                if (CREDENTIALS.residents[username] && CREDENTIALS.residents[username].password === pwd) {
+                    currentSession = { role: 'resident', username: username };
+                    enterApp();
+                } else {
+                    showError("Invalid resident password. Please check your credentials.");
+                }
+            } else if (role === 'admin') {
+                const pwd = document.getElementById('admin-password').value;
+                if (pwd === CREDENTIALS.admin.password) {
+                    currentSession = { role: 'admin', username: 'Administrator' };
+                    enterApp();
+                } else {
+                    showError("Invalid admin password. Default in code is AdminPwd123.");
+                }
+            }
+        }
+
+        function showError(msg) {
+            const errDiv = document.getElementById('login-error');
+            errDiv.textContent = msg;
+            errDiv.classList.remove('hidden');
+        }
+
+        function enterApp() {
+            document.getElementById('auth-view').classList.add('hidden');
+            document.getElementById('user-session-bar').classList.remove('hidden');
+            document.getElementById('session-info').textContent = `${currentSession.username} (${currentSession.role.toUpperCase()})`;
+
+            if (currentSession.role === 'resident') {
+                document.getElementById('resident-view').classList.remove('hidden');
+                document.getElementById('admin-view').classList.add('hidden');
+                
+                // Pre-fill apartment number & tower based on resident profile
+                const profile = CREDENTIALS.residents[currentSession.username];
+                if (profile) {
+                    document.getElementById('ticket-apt').value = profile.apt;
+                    document.getElementById('ticket-tower').value = profile.tower;
+                }
+                renderResidentPortal();
+            } else {
+                document.getElementById('admin-view').classList.remove('hidden');
+                document.getElementById('resident-view').classList.add('hidden');
+                renderAdminPortal();
+            }
+            renderDatabaseTableViewer();
+        }
+
+        function logout() {
+            currentSession = null;
+            document.getElementById('user-session-bar').classList.add('hidden');
+            document.getElementById('resident-view').classList.add('hidden');
+            document.getElementById('admin-view').classList.add('hidden');
+            document.getElementById('auth-view').classList.remove('hidden');
+            document.getElementById('resident-password').value = '';
+            document.getElementById('admin-password').value = '';
+        }
+
+        function refreshActiveViews() {
+            if (!currentSession) return;
+            if (currentSession.role === 'resident') {
+                renderResidentPortal();
+            } else {
+                renderAdminPortal();
+            }
+            renderDatabaseTableViewer();
+        }
+
+        // --- RESIDENT PORTAL LOGIC ---
+        function handleTicketSubmit(event) {
+            event.preventDefault();
+            const tower = document.getElementById('ticket-tower').value;
+            const apt = document.getElementById('ticket-apt').value.trim();
+            const date = document.getElementById('ticket-date').value;
+            const desc = document.getElementById('ticket-desc').value.trim();
+
+            const tickets = getTickets();
+            const newId = `KM-${Math.floor(1000 + Math.random() * 9000)}`;
+
+            const newTicket = {
+                id: newId,
+                resident: currentSession.username,
+                tower: tower,
+                apt: apt,
+                date: date,
+                desc: desc,
+                status: "Registered"
+            };
+
+            tickets.unshift(newTicket);
+            saveTickets(tickets);
+
+            // Reset description and date
+            document.getElementById('ticket-desc').value = '';
+            document.getElementById('ticket-date').value = '';
+
+            renderResidentPortal();
+            renderDatabaseTableViewer();
+            alert(`Ticket successfully registered with ID: ${newId}. Data saved to database table.`);
+        }
+
+        function renderResidentPortal() {
+            const tickets = getTickets();
+            const myTickets = tickets.filter(t => t.resident === currentSession.username);
+
+            // Stats calculation
+            const total = myTickets.length;
+            const active = myTickets.filter(t => ['Registered', 'Open', 'In Progress'].includes(t.status)).length;
+            const done = myTickets.filter(t => ['Closed', 'Resolved', 'Rejected'].includes(t.status)).length;
+
+            document.getElementById('stat-total').textContent = total;
+            document.getElementById('stat-active').textContent = active;
+            document.getElementById('stat-done').textContent = done;
+            document.getElementById('resident-ticket-count').textContent = `${total} ticket${total === 1 ? '' : 's'}`;
+
+            const tbody = document.getElementById('resident-tickets-tbody');
+            tbody.innerHTML = '';
+
+            if (myTickets.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-slate-400">No tickets registered yet. Fill out the form on the left to create one.</td></tr>`;
+                return;
+            }
+
+            myTickets.forEach(t => {
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50/80 transition">
+                        <td class="py-3 px-4 font-semibold text-slate-900">${t.id}</td>
+                        <td class="py-3 px-4"><span class="bg-indigo-50 text-indigo-700 font-semibold px-2.5 py-1 rounded text-xs">Tower ${t.tower}</span></td>
+                        <td class="py-3 px-4 font-medium text-slate-700">#${t.apt}</td>
+                        <td class="py-3 px-4 max-w-xs truncate" title="${t.desc}">${t.desc}</td>
+                        <td class="py-3 px-4 text-xs text-slate-500">${t.date}</td>
+                        <td class="py-3 px-4">${getStatusBadge(t.status)}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        // --- ADMIN PORTAL LOGIC ---
+        function renderAdminPortal() {
+            renderAdminTicketsTable();
+        }
+
+        function renderAdminTicketsTable() {
+            const tickets = getTickets();
+            const filter = document.getElementById('admin-status-filter').value;
+
+            const total = tickets.length;
+            const openCount = tickets.filter(t => ['Registered', 'Open', 'In Progress'].includes(t.status)).length;
+            const resolvedCount = tickets.filter(t => ['Closed', 'Resolved'].includes(t.status)).length;
+
+            document.getElementById('admin-stat-total').textContent = total;
+            document.getElementById('admin-stat-open').textContent = openCount;
+            document.getElementById('admin-stat-resolved').textContent = resolvedCount;
+
+            const filteredTickets = filter === 'ALL' ? tickets : tickets.filter(t => t.status === filter);
+            const tbody = document.getElementById('admin-tickets-tbody');
+            tbody.innerHTML = '';
+
+            if (filteredTickets.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-slate-400">No tickets found matching the selected filter.</td></tr>`;
+                return;
+            }
+
+            filteredTickets.forEach(t => {
+                let optionsHtml = VALID_STATUSES.map(s => `<option value="${s}" ${t.status === s ? 'selected' : ''}>${s}</option>`).join('');
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50/80 transition">
+                        <td class="py-3 px-4 font-semibold text-slate-900">${t.id}</td>
+                        <td class="py-3 px-4 text-xs font-medium text-indigo-600">${t.resident}</td>
+                        <td class="py-3 px-4"><span class="bg-indigo-50 text-indigo-700 font-semibold px-2 py-0.5 rounded text-xs">Tower ${t.tower}</span></td>
+                        <td class="py-3 px-4 font-medium text-slate-700">#${t.apt}</td>
+                        <td class="py-3 px-4 max-w-xs truncate" title="${t.desc}">${t.desc}</td>
+                        <td class="py-3 px-4 text-xs text-slate-500">${t.date}</td>
+                        <td class="py-3 px-4">
+                            <select onchange="updateTicketStatus('${t.id}', this.value)" class="rounded-lg border border-slate-300 px-2 py-1 text-xs bg-white focus:ring-2 focus:ring-brand-500 font-medium">
+                                ${optionsHtml}
+                            </select>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function updateTicketStatus(ticketId, newStatus) {
+            let tickets = getTickets();
+            const index = tickets.findIndex(t => t.id === ticketId);
+            if (index !== -1) {
+                tickets[index].status = newStatus;
+                saveTickets(tickets);
+                if (currentSession && currentSession.role === 'admin') {
+                    renderAdminTicketsTable();
+                }
+            }
+        }
+
+        function getStatusBadge(status) {
+            const classes = {
+                "Registered": "bg-blue-50 text-blue-700 border-blue-200",
+                "Open": "bg-yellow-50 text-yellow-700 border-yellow-200",
+                "In Progress": "bg-orange-50 text-orange-700 border-orange-200",
+                "Closed": "bg-emerald-50 text-emerald-700 border-emerald-200",
+                "Resolved": "bg-green-50 text-green-700 border-green-200",
+                "Rejected": "bg-red-50 text-red-700 border-red-200"
+            };
+            const cls = classes[status] || "bg-slate-100 text-slate-700 border-slate-200";
+            return `<span class="px-2.5 py-1 rounded-full text-xs font-medium border ${cls}">${status}</span>`;
+        }
+
+        // --- DATABASE TABLE VIEWER RENDERER ---
+        function renderDatabaseTableViewer() {
+            const tickets = getTickets();
+            const dbTbody = document.getElementById('db-raw-tbody');
+            dbTbody.innerHTML = '';
+
+            if (tickets.length === 0) {
+                dbTbody.innerHTML = `<tr><td colspan="7" class="py-4 text-center text-slate-400">Database table is empty.</td></tr>`;
+                return;
+            }
+
+            tickets.forEach(t => {
+                dbTbody.innerHTML += `
+                    <tr class="hover:bg-slate-100/80 transition">
+                        <td class="py-2.5 px-3 font-bold text-indigo-700">${t.id}</td>
+                        <td class="py-2.5 px-3 text-slate-600">${t.resident}</td>
+                        <td class="py-2.5 px-3 text-slate-700 font-semibold">${t.tower}</td>
+                        <td class="py-2.5 px-3 text-slate-700">#${t.apt}</td>
+                        <td class="py-2.5 px-3 text-slate-500">${t.date}</td>
+                        <td class="py-2.5 px-3"><span class="font-semibold text-brand-700">${t.status}</span></td>
+                        <td class="py-2.5 px-3 text-slate-600 max-w-xs truncate" title="${t.desc}">${t.desc}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        // --- EXPORT TO CSV (Excel Compatible Backup) ---
+        function exportDataAsCSV() {
+            const tickets = getTickets();
+            if (tickets.length === 0) {
+                alert("No ticket data available to export.");
+                return;
+            }
+
+            let csvContent = "Ticket ID,Resident,Tower,Apartment,Start Date,Status,Description\n";
+            tickets.forEach(t => {
+                const cleanDesc = `"${t.desc.replace(/"/g, '""')}"`;
+                csvContent += `${t.id},${t.resident},${t.tower},${t.apt},${t.date},${t.status},${cleanDesc}\n`;
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('href', url);
+            a.setAttribute('download', `Kent_Mahal_Maintenance_Tickets_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        // Initialize local storage on page load and render database table
+        initStorage();
+        renderDatabaseTableViewer();
+    </script>
+</body>
+</html>
