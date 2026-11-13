@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kent Mahal - Maintenance Portal</title>
+    <title>Kent Mahal - Maintenance & DB Portal</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -37,11 +37,12 @@
                 </svg>
                 <div>
                     <h1 class="font-bold text-lg leading-tight tracking-wide">Kent Mahal</h1>
-                    <p class="text-xs text-brand-200">Apartment Maintenance Portal</p>
+                    <p class="text-xs text-brand-200">Apartment Maintenance & Database Portal</p>
                 </div>
             </div>
             <div id="user-session-bar" class="hidden flex items-center space-x-4">
                 <span id="session-info" class="text-sm bg-brand-800 px-3 py-1.5 rounded-lg border border-brand-700"></span>
+                <button onclick="openPasswordModal()" class="text-xs bg-brand-700 hover:bg-brand-600 text-white font-medium px-3 py-1.5 rounded-lg transition">Change Password</button>
                 <button onclick="logout()" class="text-xs bg-red-600 hover:bg-red-700 text-white font-medium px-3 py-1.5 rounded-lg transition">Logout</button>
             </div>
         </div>
@@ -54,31 +55,29 @@
         <div id="auth-view" class="max-w-md mx-auto bg-white rounded-2xl shadow-xl border border-slate-100 p-8 mt-10">
             <div class="text-center mb-8">
                 <h2 class="text-2xl font-bold text-slate-900">Welcome to Kent Mahal</h2>
-                <p class="text-sm text-slate-500 mt-1">Please sign in to access the maintenance portal</p>
+                <p class="text-sm text-slate-500 mt-1">Please sign in to access the respective portal</p>
             </div>
 
-            <!-- Role Selector Tabs -->
-            <div class="flex rounded-xl bg-slate-100 p-1 mb-6">
-                <button id="tab-resident" onclick="switchLoginTab('resident')" class="flex-1 py-2 text-sm font-semibold rounded-lg bg-white text-brand-900 shadow-sm transition">Resident Portal</button>
-                <button id="tab-admin" onclick="switchLoginTab('admin')" class="flex-1 py-2 text-sm font-semibold rounded-lg text-slate-600 hover:text-slate-900 transition">Admin Portal</button>
+            <!-- Role Selector Tabs (3 Tabs: Resident, Admin, DBAdmin) -->
+            <div class="grid grid-cols-3 gap-1 rounded-xl bg-slate-100 p-1 mb-6">
+                <button id="tab-resident" onclick="switchLoginTab('resident')" class="py-2 text-xs font-semibold rounded-lg bg-white text-brand-900 shadow-sm transition">Resident</button>
+                <button id="tab-admin" onclick="switchLoginTab('admin')" class="py-2 text-xs font-semibold rounded-lg text-slate-600 hover:text-slate-900 transition">Admin</button>
+                <button id="tab-dbadmin" onclick="switchLoginTab('dbadmin')" class="py-2 text-xs font-semibold rounded-lg text-slate-600 hover:text-slate-900 transition">DBAdmin</button>
             </div>
 
             <!-- Resident LoginForm -->
             <form id="form-resident" onsubmit="handleLogin(event, 'resident')" class="space-y-4">
                 <div>
-                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Select User Profile</label>
-                    <select id="resident-username" required class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 bg-white">
-                        <option value="Resident1">Resident 1 (Tower 5, 8A1)</option>
-                        <option value="Resident2">Resident 2 (Tower 5, 8A2)</option>
-                        <option value="Resident3">Resident 3 (Tower 5, 8B1)</option>
-                        <option value="Resident4">Resident 4 (Tower 5, 9C1)</option>
-                        <option value="Resident5">Resident 5 (Tower 5, 10A1)</option>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Search & Select Resident Profile (Flat No)</label>
+                    <input type="text" id="resident-search" oninput="filterResidents()" placeholder="Type to filter flat (e.g. T1-8A1)..." class="w-full rounded-xl border border-slate-300 px-3.5 py-2 text-xs mb-2 focus:ring-2 focus:ring-brand-500">
+                    <select id="resident-username" size="5" required class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 bg-white">
+                        <!-- Populated dynamically -->
                     </select>
                 </div>
                 <div>
                     <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Password</label>
                     <input type="password" id="resident-password" required placeholder="Enter password (e.g. Resident1)" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500">
-                    <p class="text-xs text-slate-400 mt-1">Hint: Match password to username (e.g., Resident1 for Resident 1)</p>
+                    <p class="text-xs text-slate-400 mt-1">Default password matches username prefix (e.g., Resident1 for Resident1(T1-1A1))</p>
                 </div>
                 <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-2.5 rounded-xl transition shadow-lg shadow-brand-500/20">Login as Resident</button>
             </form>
@@ -92,9 +91,23 @@
                 <div>
                     <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Admin Password</label>
                     <input type="password" id="admin-password" required placeholder="Enter admin password" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500">
-                    <p class="text-xs text-slate-400 mt-1">Password saved in code: <code class="bg-slate-100 px-1 py-0.5 rounded text-slate-600">AdminPwd123</code></p>
+                    <p class="text-xs text-slate-400 mt-1">Default password in code: <code class="bg-slate-100 px-1 py-0.5 rounded text-slate-600">AdminPwd123</code></p>
                 </div>
                 <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold py-2.5 rounded-xl transition shadow-lg">Login as Administrator</button>
+            </form>
+
+            <!-- DBAdmin LoginForm -->
+            <form id="form-dbadmin" onsubmit="handleLogin(event, 'dbadmin')" class="space-y-4 hidden">
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">DBAdmin Username</label>
+                    <input type="text" value="dbadmin" disabled class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-500 cursor-not-allowed">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">DBAdmin Password</label>
+                    <input type="password" id="dbadmin-password" required placeholder="Enter DBAdmin password" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500">
+                    <p class="text-xs text-slate-400 mt-1">Default password in code: <code class="bg-slate-100 px-1 py-0.5 rounded text-slate-600">AdminPwd123</code> (Same as Admin)</p>
+                </div>
+                <button type="submit" class="w-full bg-indigo-900 hover:bg-indigo-800 text-white font-semibold py-2.5 rounded-xl transition shadow-lg">Login as DBAdmin</button>
             </form>
 
             <div id="login-error" class="mt-4 text-center text-xs text-red-600 font-medium hidden"></div>
@@ -117,13 +130,13 @@
                                 <option value="2">Tower 2</option>
                                 <option value="3">Tower 3</option>
                                 <option value="4">Tower 4</option>
-                                <option value="5" selected>Tower 5</option>
+                                <option value="5">Tower 5</option>
                                 <option value="6">Tower 6</option>
                             </select>
                         </div>
                         <div>
                             <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Apartment Number</label>
-                            <input type="text" id="ticket-apt" required placeholder="e.g. 8A1, 8A2, 8A3..." class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500">
+                            <input type="text" id="ticket-apt" required placeholder="e.g. 1A1, 8A1..." class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 bg-slate-50">
                         </div>
                         <div>
                             <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Start Date of Issue</label>
@@ -247,17 +260,15 @@
             </div>
         </div>
 
-        <hr class="border-slate-200 my-8">
-
-        <!-- BUILT-IN DATABASE TABLE VIEW (Central DB State Viewer) -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-4">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-100 pb-4">
+        <!-- DBADMIN PORTAL VIEW (Separate Third Page) -->
+        <div id="dbadmin-view" class="hidden space-y-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
                     <h3 class="text-lg font-bold text-slate-900 flex items-center space-x-2">
                         <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.58 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.58 4 8 4s8-1.79 8-4M4 7c0-2.21 3.58-4 8-4s8 1.79 8 4m0 5c0 2.21-3.58 4-8 4s-8-1.79-8-4"></path></svg>
-                        <span>Central Database Table Schema & Master Records</span>
+                        <span>DBAdmin Portal - Central Database Table Schema & Master Records</span>
                     </h3>
-                    <p class="text-xs text-slate-500 mt-1">This underlying database table consumes and stores all ticket transactions between Resident and Admin portals. Ready for seamless cloud DB (PostgreSQL/MySQL/Firebase) migration.</p>
+                    <p class="text-xs text-slate-500 mt-1">This underlying database table consumes and stores all ticket transactions between Resident and Admin portals. Ready for seamless cloud DB migration.</p>
                 </div>
                 <div class="flex items-center space-x-2">
                     <button onclick="resetDatabaseTable()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium px-3 py-1.5 rounded-lg transition border border-slate-300">Reset DB to Defaults</button>
@@ -265,28 +276,60 @@
                 </div>
             </div>
 
-            <div class="overflow-x-auto rounded-xl border border-slate-200">
-                <table class="w-full text-left border-collapse text-xs font-mono">
-                    <thead>
-                        <tr class="bg-slate-900 text-white font-bold uppercase tracking-wider">
-                            <th class="py-2.5 px-3">id (PK)</th>
-                            <th class="py-2.5 px-3">resident_id</th>
-                            <th class="py-2.5 px-3">tower</th>
-                            <th class="py-2.5 px-3">apartment</th>
-                            <th class="py-2.5 px-3">start_date</th>
-                            <th class="py-2.5 px-3">status</th>
-                            <th class="py-2.5 px-3">description</th>
-                        </tr>
-                    </thead>
-                    <tbody id="db-raw-tbody" class="divide-y divide-slate-200 bg-slate-50/50 text-slate-800">
-                        <!-- Database records populated here -->
-                    </tbody>
-                </table>
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-4">
+                <div class="overflow-x-auto rounded-xl border border-slate-200">
+                    <table class="w-full text-left border-collapse text-xs font-mono">
+                        <thead>
+                            <tr class="bg-slate-900 text-white font-bold uppercase tracking-wider">
+                                <th class="py-2.5 px-3">id (PK)</th>
+                                <th class="py-2.5 px-3">resident_id</th>
+                                <th class="py-2.5 px-3">tower</th>
+                                <th class="py-2.5 px-3">apartment</th>
+                                <th class="py-2.5 px-3">start_date</th>
+                                <th class="py-2.5 px-3">status</th>
+                                <th class="py-2.5 px-3">description</th>
+                            </tr>
+                        </thead>
+                        <tbody id="db-raw-tbody" class="divide-y divide-slate-200 bg-slate-50/50 text-slate-800">
+                            <!-- Database records populated here -->
+                        </tbody>
+                    </table>
+                </div>
+                <p class="text-[11px] text-slate-400 italic">* Note: When migrating to a cloud database (such as PostgreSQL or MySQL), this exact schema structure maps directly into your SQL table columns.</p>
             </div>
-            <p class="text-[11px] text-slate-400 italic">* Note: When migrating to a cloud database (such as PostgreSQL or MySQL), this exact schema structure <code class="bg-slate-100 px-1 rounded text-slate-600">(id, resident_id, tower, apartment, start_date, status, description)</code> maps directly into your SQL table columns.</p>
         </div>
 
     </main>
+
+    <!-- PASSWORD CHANGE MODAL -->
+    <div id="password-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4 border border-slate-100">
+            <h3 class="text-lg font-bold text-slate-900 flex items-center justify-between">
+                <span>Change Account Password</span>
+                <button onclick="closePasswordModal()" class="text-slate-400 hover:text-slate-600 text-sm">&times;</button>
+            </h3>
+            <p class="text-xs text-slate-500">Update your password securely. This will be stored in your credentials profile for future logins.</p>
+            <form onsubmit="handlePasswordChange(event)" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Current Password</label>
+                    <input type="password" id="current-pwd" required class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">New Password</label>
+                    <input type="password" id="new-pwd" required class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Confirm New Password</label>
+                    <input type="password" id="confirm-pwd" required class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500">
+                </div>
+                <div id="pwd-error" class="text-xs text-red-600 font-medium hidden"></div>
+                <div class="flex space-x-3 pt-2">
+                    <button type="button" onclick="closePasswordModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2.5 rounded-xl text-sm transition">Cancel</button>
+                    <button type="submit" class="flex-1 bg-brand-600 hover:bg-brand-700 text-white font-semibold py-2.5 rounded-xl text-sm transition">Update Password</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <!-- Footer -->
     <footer class="mt-auto bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-500">
@@ -295,30 +338,2340 @@
 
     <!-- Application Script Logic -->
     <script>
-        // --- HARDCODED CREDENTIALS & STORAGE SCHEMA ---
-        const CREDENTIALS = {
-            admin: { password: "AdminPwd123" },
-            residents: {
-                "Resident1": { password: "Resident1", tower: "5", apt: "8A1" },
-                "Resident2": { password: "Resident2", tower: "5", apt: "8A2" },
-                "Resident3": { password: "Resident3", tower: "5", apt: "8B1" },
-                "Resident4": { password: "Resident4", tower: "5", apt: "9C1" },
-                "Resident5": { password: "Resident5", tower: "5", apt: "10A1" }
+        // --- MASTER RESIDENTS DATABASE GENERATED FROM PDF ---
+        const MASTER_RESIDENTS = {
+    "Resident1(T1-1A1)": {
+        "password": "Resident1",
+        "tower": "1",
+        "flat": "T1-1A1"
+    },
+    "Resident2(T1-1A2)": {
+        "password": "Resident2",
+        "tower": "1",
+        "flat": "T1-1A2"
+    },
+    "Resident3(T1-1A3)": {
+        "password": "Resident3",
+        "tower": "1",
+        "flat": "T1-1A3"
+    },
+    "Resident4(T1-1A4)": {
+        "password": "Resident4",
+        "tower": "1",
+        "flat": "T1-1A4"
+    },
+    "Resident5(T1-2A1)": {
+        "password": "Resident5",
+        "tower": "1",
+        "flat": "T1-2A1"
+    },
+    "Resident6(T1-2A2)": {
+        "password": "Resident6",
+        "tower": "1",
+        "flat": "T1-2A2"
+    },
+    "Resident7(T1-2A3)": {
+        "password": "Resident7",
+        "tower": "1",
+        "flat": "T1-2A3"
+    },
+    "Resident8(T1-2A4)": {
+        "password": "Resident8",
+        "tower": "1",
+        "flat": "T1-2A4"
+    },
+    "Resident9(T1-3A1)": {
+        "password": "Resident9",
+        "tower": "1",
+        "flat": "T1-3A1"
+    },
+    "Resident10(T1-3A2)": {
+        "password": "Resident10",
+        "tower": "1",
+        "flat": "T1-3A2"
+    },
+    "Resident11(T1-3A3)": {
+        "password": "Resident11",
+        "tower": "1",
+        "flat": "T1-3A3"
+    },
+    "Resident12(T1-3A4)": {
+        "password": "Resident12",
+        "tower": "1",
+        "flat": "T1-3A4"
+    },
+    "Resident13(T1-4A1)": {
+        "password": "Resident13",
+        "tower": "1",
+        "flat": "T1-4A1"
+    },
+    "Resident14(T1-4A2)": {
+        "password": "Resident14",
+        "tower": "1",
+        "flat": "T1-4A2"
+    },
+    "Resident15(T1-4A3)": {
+        "password": "Resident15",
+        "tower": "1",
+        "flat": "T1-4A3"
+    },
+    "Resident16(T1-4A4)": {
+        "password": "Resident16",
+        "tower": "1",
+        "flat": "T1-4A4"
+    },
+    "Resident17(T1-5A1)": {
+        "password": "Resident17",
+        "tower": "1",
+        "flat": "T1-5A1"
+    },
+    "Resident18(T1-5A2)": {
+        "password": "Resident18",
+        "tower": "1",
+        "flat": "T1-5A2"
+    },
+    "Resident19(T1-5A3)": {
+        "password": "Resident19",
+        "tower": "1",
+        "flat": "T1-5A3"
+    },
+    "Resident20(T1-5A4)": {
+        "password": "Resident20",
+        "tower": "1",
+        "flat": "T1-5A4"
+    },
+    "Resident21(T1-6A1)": {
+        "password": "Resident21",
+        "tower": "1",
+        "flat": "T1-6A1"
+    },
+    "Resident22(T1-6A2)": {
+        "password": "Resident22",
+        "tower": "1",
+        "flat": "T1-6A2"
+    },
+    "Resident23(T1-6A3)": {
+        "password": "Resident23",
+        "tower": "1",
+        "flat": "T1-6A3"
+    },
+    "Resident24(T1-6A4)": {
+        "password": "Resident24",
+        "tower": "1",
+        "flat": "T1-6A4"
+    },
+    "Resident25(T1-7A1)": {
+        "password": "Resident25",
+        "tower": "1",
+        "flat": "T1-7A1"
+    },
+    "Resident26(T1-7A2)": {
+        "password": "Resident26",
+        "tower": "1",
+        "flat": "T1-7A2"
+    },
+    "Resident27(T1-7A3)": {
+        "password": "Resident27",
+        "tower": "1",
+        "flat": "T1-7A3"
+    },
+    "Resident28(T1-7A4)": {
+        "password": "Resident28",
+        "tower": "1",
+        "flat": "T1-7A4"
+    },
+    "Resident29(T1-8A1)": {
+        "password": "Resident29",
+        "tower": "1",
+        "flat": "T1-8A1"
+    },
+    "Resident30(T1-8A2)": {
+        "password": "Resident30",
+        "tower": "1",
+        "flat": "T1-8A2"
+    },
+    "Resident31(T1-8A3)": {
+        "password": "Resident31",
+        "tower": "1",
+        "flat": "T1-8A3"
+    },
+    "Resident32(T1-8A4)": {
+        "password": "Resident32",
+        "tower": "1",
+        "flat": "T1-8A4"
+    },
+    "Resident33(T1-9A1)": {
+        "password": "Resident33",
+        "tower": "1",
+        "flat": "T1-9A1"
+    },
+    "Resident34(T1-9A2)": {
+        "password": "Resident34",
+        "tower": "1",
+        "flat": "T1-9A2"
+    },
+    "Resident35(T1-9A3)": {
+        "password": "Resident35",
+        "tower": "1",
+        "flat": "T1-9A3"
+    },
+    "Resident36(T1-9A4)": {
+        "password": "Resident36",
+        "tower": "1",
+        "flat": "T1-9A4"
+    },
+    "Resident37(T1-10A1)": {
+        "password": "Resident37",
+        "tower": "1",
+        "flat": "T1-10A1"
+    },
+    "Resident38(T1-10A2)": {
+        "password": "Resident38",
+        "tower": "1",
+        "flat": "T1-10A2"
+    },
+    "Resident39(T1-10A3)": {
+        "password": "Resident39",
+        "tower": "1",
+        "flat": "T1-10A3"
+    },
+    "Resident40(T1-10A4)": {
+        "password": "Resident40",
+        "tower": "1",
+        "flat": "T1-10A4"
+    },
+    "Resident41(T1-11A1)": {
+        "password": "Resident41",
+        "tower": "1",
+        "flat": "T1-11A1"
+    },
+    "Resident42(T1-11A2)": {
+        "password": "Resident42",
+        "tower": "1",
+        "flat": "T1-11A2"
+    },
+    "Resident43(T1-11A3)": {
+        "password": "Resident43",
+        "tower": "1",
+        "flat": "T1-11A3"
+    },
+    "Resident44(T1-11A4)": {
+        "password": "Resident44",
+        "tower": "1",
+        "flat": "T1-11A4"
+    },
+    "Resident45(T1-12A1)": {
+        "password": "Resident45",
+        "tower": "1",
+        "flat": "T1-12A1"
+    },
+    "Resident46(T1-12A2)": {
+        "password": "Resident46",
+        "tower": "1",
+        "flat": "T1-12A2"
+    },
+    "Resident47(T1-12A3)": {
+        "password": "Resident47",
+        "tower": "1",
+        "flat": "T1-12A3"
+    },
+    "Resident48(T1-12A4)": {
+        "password": "Resident48",
+        "tower": "1",
+        "flat": "T1-12A4"
+    },
+    "Resident49(T1-13A1)": {
+        "password": "Resident49",
+        "tower": "1",
+        "flat": "T1-13A1"
+    },
+    "Resident50(T1-13A2)": {
+        "password": "Resident50",
+        "tower": "1",
+        "flat": "T1-13A2"
+    },
+    "Resident51(T1-13A3)": {
+        "password": "Resident51",
+        "tower": "1",
+        "flat": "T1-13A3"
+    },
+    "Resident52(T1-13A4)": {
+        "password": "Resident52",
+        "tower": "1",
+        "flat": "T1-13A4"
+    },
+    "Resident53(T1-14A1)": {
+        "password": "Resident53",
+        "tower": "1",
+        "flat": "T1-14A1"
+    },
+    "Resident54(T1-14A2)": {
+        "password": "Resident54",
+        "tower": "1",
+        "flat": "T1-14A2"
+    },
+    "Resident55(T1-14A3)": {
+        "password": "Resident55",
+        "tower": "1",
+        "flat": "T1-14A3"
+    },
+    "Resident56(T1-14A4)": {
+        "password": "Resident56",
+        "tower": "1",
+        "flat": "T1-14A4"
+    },
+    "Resident57(T1-15A1)": {
+        "password": "Resident57",
+        "tower": "1",
+        "flat": "T1-15A1"
+    },
+    "Resident58(T1-15A2)": {
+        "password": "Resident58",
+        "tower": "1",
+        "flat": "T1-15A2"
+    },
+    "Resident59(T1-15A3)": {
+        "password": "Resident59",
+        "tower": "1",
+        "flat": "T1-15A3"
+    },
+    "Resident60(T1-15A4)": {
+        "password": "Resident60",
+        "tower": "1",
+        "flat": "T1-15A4"
+    },
+    "Resident61(T1-16A1)": {
+        "password": "Resident61",
+        "tower": "1",
+        "flat": "T1-16A1"
+    },
+    "Resident62(T1-16A2)": {
+        "password": "Resident62",
+        "tower": "1",
+        "flat": "T1-16A2"
+    },
+    "Resident63(T1-16A3)": {
+        "password": "Resident63",
+        "tower": "1",
+        "flat": "T1-16A3"
+    },
+    "Resident64(T1-16A4)": {
+        "password": "Resident64",
+        "tower": "1",
+        "flat": "T1-16A4"
+    },
+    "Resident65(T1-17A1)": {
+        "password": "Resident65",
+        "tower": "1",
+        "flat": "T1-17A1"
+    },
+    "Resident66(T1-17A2)": {
+        "password": "Resident66",
+        "tower": "1",
+        "flat": "T1-17A2"
+    },
+    "Resident67(T1-17A3)": {
+        "password": "Resident67",
+        "tower": "1",
+        "flat": "T1-17A3"
+    },
+    "Resident68(T1-17A4)": {
+        "password": "Resident68",
+        "tower": "1",
+        "flat": "T1-17A4"
+    },
+    "Resident69(T1-18A1)": {
+        "password": "Resident69",
+        "tower": "1",
+        "flat": "T1-18A1"
+    },
+    "Resident70(T1-18A2)": {
+        "password": "Resident70",
+        "tower": "1",
+        "flat": "T1-18A2"
+    },
+    "Resident71(T1-18A3)": {
+        "password": "Resident71",
+        "tower": "1",
+        "flat": "T1-18A3"
+    },
+    "Resident72(T1-18A4)": {
+        "password": "Resident72",
+        "tower": "1",
+        "flat": "T1-18A4"
+    },
+    "Resident73(T1-19A1)": {
+        "password": "Resident73",
+        "tower": "1",
+        "flat": "T1-19A1"
+    },
+    "Resident74(T1-19A2)": {
+        "password": "Resident74",
+        "tower": "1",
+        "flat": "T1-19A2"
+    },
+    "Resident75(T1-19A3)": {
+        "password": "Resident75",
+        "tower": "1",
+        "flat": "T1-19A3"
+    },
+    "Resident76(T1-19A4)": {
+        "password": "Resident76",
+        "tower": "1",
+        "flat": "T1-19A4"
+    },
+    "Resident77(T2-1A)": {
+        "password": "Resident77",
+        "tower": "2",
+        "flat": "T2-1A"
+    },
+    "Resident78(T2-1B)": {
+        "password": "Resident78",
+        "tower": "2",
+        "flat": "T2-1B"
+    },
+    "Resident79(T2-1C)": {
+        "password": "Resident79",
+        "tower": "2",
+        "flat": "T2-1C"
+    },
+    "Resident80(T2-1D)": {
+        "password": "Resident80",
+        "tower": "2",
+        "flat": "T2-1D"
+    },
+    "Resident81(T2-2A)": {
+        "password": "Resident81",
+        "tower": "2",
+        "flat": "T2-2A"
+    },
+    "Resident82(T2-2B)": {
+        "password": "Resident82",
+        "tower": "2",
+        "flat": "T2-2B"
+    },
+    "Resident83(T2-2C)": {
+        "password": "Resident83",
+        "tower": "2",
+        "flat": "T2-2C"
+    },
+    "Resident84(T2-2D)": {
+        "password": "Resident84",
+        "tower": "2",
+        "flat": "T2-2D"
+    },
+    "Resident85(T2-3A)": {
+        "password": "Resident85",
+        "tower": "2",
+        "flat": "T2-3A"
+    },
+    "Resident86(T2-3B)": {
+        "password": "Resident86",
+        "tower": "2",
+        "flat": "T2-3B"
+    },
+    "Resident87(T2-3C)": {
+        "password": "Resident87",
+        "tower": "2",
+        "flat": "T2-3C"
+    },
+    "Resident88(T2-3D)": {
+        "password": "Resident88",
+        "tower": "2",
+        "flat": "T2-3D"
+    },
+    "Resident89(T2-4A)": {
+        "password": "Resident89",
+        "tower": "2",
+        "flat": "T2-4A"
+    },
+    "Resident90(T2-4B)": {
+        "password": "Resident90",
+        "tower": "2",
+        "flat": "T2-4B"
+    },
+    "Resident91(T2-4C)": {
+        "password": "Resident91",
+        "tower": "2",
+        "flat": "T2-4C"
+    },
+    "Resident92(T2-4D)": {
+        "password": "Resident92",
+        "tower": "2",
+        "flat": "T2-4D"
+    },
+    "Resident93(T2-5A)": {
+        "password": "Resident93",
+        "tower": "2",
+        "flat": "T2-5A"
+    },
+    "Resident94(T2-5B)": {
+        "password": "Resident94",
+        "tower": "2",
+        "flat": "T2-5B"
+    },
+    "Resident95(T2-5C)": {
+        "password": "Resident95",
+        "tower": "2",
+        "flat": "T2-5C"
+    },
+    "Resident96(T2-5D)": {
+        "password": "Resident96",
+        "tower": "2",
+        "flat": "T2-5D"
+    },
+    "Resident97(T2-6A)": {
+        "password": "Resident97",
+        "tower": "2",
+        "flat": "T2-6A"
+    },
+    "Resident98(T2-6B)": {
+        "password": "Resident98",
+        "tower": "2",
+        "flat": "T2-6B"
+    },
+    "Resident99(T2-6C)": {
+        "password": "Resident99",
+        "tower": "2",
+        "flat": "T2-6C"
+    },
+    "Resident100(T2-6D)": {
+        "password": "Resident100",
+        "tower": "2",
+        "flat": "T2-6D"
+    },
+    "Resident101(T2-7A)": {
+        "password": "Resident101",
+        "tower": "2",
+        "flat": "T2-7A"
+    },
+    "Resident102(T2-7B)": {
+        "password": "Resident102",
+        "tower": "2",
+        "flat": "T2-7B"
+    },
+    "Resident103(T2-7C)": {
+        "password": "Resident103",
+        "tower": "2",
+        "flat": "T2-7C"
+    },
+    "Resident104(T2-7D)": {
+        "password": "Resident104",
+        "tower": "2",
+        "flat": "T2-7D"
+    },
+    "Resident105(T2-8A)": {
+        "password": "Resident105",
+        "tower": "2",
+        "flat": "T2-8A"
+    },
+    "Resident106(T2-8B)": {
+        "password": "Resident106",
+        "tower": "2",
+        "flat": "T2-8B"
+    },
+    "Resident107(T2-8C)": {
+        "password": "Resident107",
+        "tower": "2",
+        "flat": "T2-8C"
+    },
+    "Resident108(T2-8D)": {
+        "password": "Resident108",
+        "tower": "2",
+        "flat": "T2-8D"
+    },
+    "Resident109(T2-9A)": {
+        "password": "Resident109",
+        "tower": "2",
+        "flat": "T2-9A"
+    },
+    "Resident110(T2-9B)": {
+        "password": "Resident110",
+        "tower": "2",
+        "flat": "T2-9B"
+    },
+    "Resident111(T2-9C)": {
+        "password": "Resident111",
+        "tower": "2",
+        "flat": "T2-9C"
+    },
+    "Resident112(T2-9D)": {
+        "password": "Resident112",
+        "tower": "2",
+        "flat": "T2-9D"
+    },
+    "Resident113(T2-10A)": {
+        "password": "Resident113",
+        "tower": "2",
+        "flat": "T2-10A"
+    },
+    "Resident114(T2-10B)": {
+        "password": "Resident114",
+        "tower": "2",
+        "flat": "T2-10B"
+    },
+    "Resident115(T2-10C)": {
+        "password": "Resident115",
+        "tower": "2",
+        "flat": "T2-10C"
+    },
+    "Resident116(T2-10D)": {
+        "password": "Resident116",
+        "tower": "2",
+        "flat": "T2-10D"
+    },
+    "Resident117(T2-11A)": {
+        "password": "Resident117",
+        "tower": "2",
+        "flat": "T2-11A"
+    },
+    "Resident118(T2-11B)": {
+        "password": "Resident118",
+        "tower": "2",
+        "flat": "T2-11B"
+    },
+    "Resident119(T2-11C)": {
+        "password": "Resident119",
+        "tower": "2",
+        "flat": "T2-11C"
+    },
+    "Resident120(T2-11D)": {
+        "password": "Resident120",
+        "tower": "2",
+        "flat": "T2-11D"
+    },
+    "Resident121(T2-12A)": {
+        "password": "Resident121",
+        "tower": "2",
+        "flat": "T2-12A"
+    },
+    "Resident122(T2-12B)": {
+        "password": "Resident122",
+        "tower": "2",
+        "flat": "T2-12B"
+    },
+    "Resident123(T2-12C)": {
+        "password": "Resident123",
+        "tower": "2",
+        "flat": "T2-12C"
+    },
+    "Resident124(T2-12D)": {
+        "password": "Resident124",
+        "tower": "2",
+        "flat": "T2-12D"
+    },
+    "Resident125(T2-13A)": {
+        "password": "Resident125",
+        "tower": "2",
+        "flat": "T2-13A"
+    },
+    "Resident126(T2-13B)": {
+        "password": "Resident126",
+        "tower": "2",
+        "flat": "T2-13B"
+    },
+    "Resident127(T2-13C)": {
+        "password": "Resident127",
+        "tower": "2",
+        "flat": "T2-13C"
+    },
+    "Resident128(T2-13D)": {
+        "password": "Resident128",
+        "tower": "2",
+        "flat": "T2-13D"
+    },
+    "Resident129(T2-14A)": {
+        "password": "Resident129",
+        "tower": "2",
+        "flat": "T2-14A"
+    },
+    "Resident130(T2-14B)": {
+        "password": "Resident130",
+        "tower": "2",
+        "flat": "T2-14B"
+    },
+    "Resident131(T2-14C)": {
+        "password": "Resident131",
+        "tower": "2",
+        "flat": "T2-14C"
+    },
+    "Resident132(T2-14D)": {
+        "password": "Resident132",
+        "tower": "2",
+        "flat": "T2-14D"
+    },
+    "Resident133(T2-15A)": {
+        "password": "Resident133",
+        "tower": "2",
+        "flat": "T2-15A"
+    },
+    "Resident134(T2-15B)": {
+        "password": "Resident134",
+        "tower": "2",
+        "flat": "T2-15B"
+    },
+    "Resident135(T2-15C)": {
+        "password": "Resident135",
+        "tower": "2",
+        "flat": "T2-15C"
+    },
+    "Resident136(T2-15D)": {
+        "password": "Resident136",
+        "tower": "2",
+        "flat": "T2-15D"
+    },
+    "Resident137(T2-16A)": {
+        "password": "Resident137",
+        "tower": "2",
+        "flat": "T2-16A"
+    },
+    "Resident138(T2-16B)": {
+        "password": "Resident138",
+        "tower": "2",
+        "flat": "T2-16B"
+    },
+    "Resident139(T2-16C)": {
+        "password": "Resident139",
+        "tower": "2",
+        "flat": "T2-16C"
+    },
+    "Resident140(T2-16D)": {
+        "password": "Resident140",
+        "tower": "2",
+        "flat": "T2-16D"
+    },
+    "Resident141(T2-17A)": {
+        "password": "Resident141",
+        "tower": "2",
+        "flat": "T2-17A"
+    },
+    "Resident142(T2-17B)": {
+        "password": "Resident142",
+        "tower": "2",
+        "flat": "T2-17B"
+    },
+    "Resident143(T2-17C)": {
+        "password": "Resident143",
+        "tower": "2",
+        "flat": "T2-17C"
+    },
+    "Resident144(T2-17D)": {
+        "password": "Resident144",
+        "tower": "2",
+        "flat": "T2-17D"
+    },
+    "Resident145(T2-18A)": {
+        "password": "Resident145",
+        "tower": "2",
+        "flat": "T2-18A"
+    },
+    "Resident146(T2-18B)": {
+        "password": "Resident146",
+        "tower": "2",
+        "flat": "T2-18B"
+    },
+    "Resident147(T2-18C)": {
+        "password": "Resident147",
+        "tower": "2",
+        "flat": "T2-18C"
+    },
+    "Resident148(T2-18D)": {
+        "password": "Resident148",
+        "tower": "2",
+        "flat": "T2-18D"
+    },
+    "Resident149(T2-19A)": {
+        "password": "Resident149",
+        "tower": "2",
+        "flat": "T2-19A"
+    },
+    "Resident150(T2-19B)": {
+        "password": "Resident150",
+        "tower": "2",
+        "flat": "T2-19B"
+    },
+    "Resident151(T2-19C)": {
+        "password": "Resident151",
+        "tower": "2",
+        "flat": "T2-19C"
+    },
+    "Resident152(T2-19D)": {
+        "password": "Resident152",
+        "tower": "2",
+        "flat": "T2-19D"
+    },
+    "Resident153(T3-2A1)": {
+        "password": "Resident153",
+        "tower": "3",
+        "flat": "T3-2A1"
+    },
+    "Resident154(T3-2A2)": {
+        "password": "Resident154",
+        "tower": "3",
+        "flat": "T3-2A2"
+    },
+    "Resident155(T3-2A3)": {
+        "password": "Resident155",
+        "tower": "3",
+        "flat": "T3-2A3"
+    },
+    "Resident156(T3-2A4)": {
+        "password": "Resident156",
+        "tower": "3",
+        "flat": "T3-2A4"
+    },
+    "Resident157(T3-3A1)": {
+        "password": "Resident157",
+        "tower": "3",
+        "flat": "T3-3A1"
+    },
+    "Resident158(T3-3A2)": {
+        "password": "Resident158",
+        "tower": "3",
+        "flat": "T3-3A2"
+    },
+    "Resident159(T3-3A3)": {
+        "password": "Resident159",
+        "tower": "3",
+        "flat": "T3-3A3"
+    },
+    "Resident160(T3-3A4)": {
+        "password": "Resident160",
+        "tower": "3",
+        "flat": "T3-3A4"
+    },
+    "Resident161(T3-4A1)": {
+        "password": "Resident161",
+        "tower": "3",
+        "flat": "T3-4A1"
+    },
+    "Resident162(T3-4A2)": {
+        "password": "Resident162",
+        "tower": "3",
+        "flat": "T3-4A2"
+    },
+    "Resident163(T3-4A3)": {
+        "password": "Resident163",
+        "tower": "3",
+        "flat": "T3-4A3"
+    },
+    "Resident164(T3-4A4)": {
+        "password": "Resident164",
+        "tower": "3",
+        "flat": "T3-4A4"
+    },
+    "Resident165(T3-5A1)": {
+        "password": "Resident165",
+        "tower": "3",
+        "flat": "T3-5A1"
+    },
+    "Resident166(T3-5A2)": {
+        "password": "Resident166",
+        "tower": "3",
+        "flat": "T3-5A2"
+    },
+    "Resident167(T3-5A3)": {
+        "password": "Resident167",
+        "tower": "3",
+        "flat": "T3-5A3"
+    },
+    "Resident168(T3-5A4)": {
+        "password": "Resident168",
+        "tower": "3",
+        "flat": "T3-5A4"
+    },
+    "Resident169(T3-6A1)": {
+        "password": "Resident169",
+        "tower": "3",
+        "flat": "T3-6A1"
+    },
+    "Resident170(T3-6A2)": {
+        "password": "Resident170",
+        "tower": "3",
+        "flat": "T3-6A2"
+    },
+    "Resident171(T3-6A3)": {
+        "password": "Resident171",
+        "tower": "3",
+        "flat": "T3-6A3"
+    },
+    "Resident172(T3-6A4)": {
+        "password": "Resident172",
+        "tower": "3",
+        "flat": "T3-6A4"
+    },
+    "Resident173(T3-7A1)": {
+        "password": "Resident173",
+        "tower": "3",
+        "flat": "T3-7A1"
+    },
+    "Resident174(T3-7A2)": {
+        "password": "Resident174",
+        "tower": "3",
+        "flat": "T3-7A2"
+    },
+    "Resident175(T3-7A3)": {
+        "password": "Resident175",
+        "tower": "3",
+        "flat": "T3-7A3"
+    },
+    "Resident176(T3-7A4)": {
+        "password": "Resident176",
+        "tower": "3",
+        "flat": "T3-7A4"
+    },
+    "Resident177(T3-8A1)": {
+        "password": "Resident177",
+        "tower": "3",
+        "flat": "T3-8A1"
+    },
+    "Resident178(T3-8A2)": {
+        "password": "Resident178",
+        "tower": "3",
+        "flat": "T3-8A2"
+    },
+    "Resident179(T3-8A3)": {
+        "password": "Resident179",
+        "tower": "3",
+        "flat": "T3-8A3"
+    },
+    "Resident180(T3-8A4)": {
+        "password": "Resident180",
+        "tower": "3",
+        "flat": "T3-8A4"
+    },
+    "Resident181(T3-9A1)": {
+        "password": "Resident181",
+        "tower": "3",
+        "flat": "T3-9A1"
+    },
+    "Resident182(T3-9A2)": {
+        "password": "Resident182",
+        "tower": "3",
+        "flat": "T3-9A2"
+    },
+    "Resident183(T3-9A3)": {
+        "password": "Resident183",
+        "tower": "3",
+        "flat": "T3-9A3"
+    },
+    "Resident184(T3-9A4)": {
+        "password": "Resident184",
+        "tower": "3",
+        "flat": "T3-9A4"
+    },
+    "Resident185(T3-10A1)": {
+        "password": "Resident185",
+        "tower": "3",
+        "flat": "T3-10A1"
+    },
+    "Resident186(T3-10A2)": {
+        "password": "Resident186",
+        "tower": "3",
+        "flat": "T3-10A2"
+    },
+    "Resident187(T3-10A3)": {
+        "password": "Resident187",
+        "tower": "3",
+        "flat": "T3-10A3"
+    },
+    "Resident188(T3-10A4)": {
+        "password": "Resident188",
+        "tower": "3",
+        "flat": "T3-10A4"
+    },
+    "Resident189(T3-11A1)": {
+        "password": "Resident189",
+        "tower": "3",
+        "flat": "T3-11A1"
+    },
+    "Resident190(T3-11A2)": {
+        "password": "Resident190",
+        "tower": "3",
+        "flat": "T3-11A2"
+    },
+    "Resident191(T3-11A3)": {
+        "password": "Resident191",
+        "tower": "3",
+        "flat": "T3-11A3"
+    },
+    "Resident192(T3-11A4)": {
+        "password": "Resident192",
+        "tower": "3",
+        "flat": "T3-11A4"
+    },
+    "Resident193(T3-12A1)": {
+        "password": "Resident193",
+        "tower": "3",
+        "flat": "T3-12A1"
+    },
+    "Resident194(T3-12A2)": {
+        "password": "Resident194",
+        "tower": "3",
+        "flat": "T3-12A2"
+    },
+    "Resident195(T3-12A3)": {
+        "password": "Resident195",
+        "tower": "3",
+        "flat": "T3-12A3"
+    },
+    "Resident196(T3-12A4)": {
+        "password": "Resident196",
+        "tower": "3",
+        "flat": "T3-12A4"
+    },
+    "Resident197(T3-13A1)": {
+        "password": "Resident197",
+        "tower": "3",
+        "flat": "T3-13A1"
+    },
+    "Resident198(T3-13A2)": {
+        "password": "Resident198",
+        "tower": "3",
+        "flat": "T3-13A2"
+    },
+    "Resident199(T3-13A3)": {
+        "password": "Resident199",
+        "tower": "3",
+        "flat": "T3-13A3"
+    },
+    "Resident200(T3-13A4)": {
+        "password": "Resident200",
+        "tower": "3",
+        "flat": "T3-13A4"
+    },
+    "Resident201(T3-14A1)": {
+        "password": "Resident201",
+        "tower": "3",
+        "flat": "T3-14A1"
+    },
+    "Resident202(T3-14A2)": {
+        "password": "Resident202",
+        "tower": "3",
+        "flat": "T3-14A2"
+    },
+    "Resident203(T3-14A3)": {
+        "password": "Resident203",
+        "tower": "3",
+        "flat": "T3-14A3"
+    },
+    "Resident204(T3-14A4)": {
+        "password": "Resident204",
+        "tower": "3",
+        "flat": "T3-14A4"
+    },
+    "Resident205(T3-15A1)": {
+        "password": "Resident205",
+        "tower": "3",
+        "flat": "T3-15A1"
+    },
+    "Resident206(T3-15A2)": {
+        "password": "Resident206",
+        "tower": "3",
+        "flat": "T3-15A2"
+    },
+    "Resident207(T3-15A3)": {
+        "password": "Resident207",
+        "tower": "3",
+        "flat": "T3-15A3"
+    },
+    "Resident208(T3-15A4)": {
+        "password": "Resident208",
+        "tower": "3",
+        "flat": "T3-15A4"
+    },
+    "Resident209(T3-16A1)": {
+        "password": "Resident209",
+        "tower": "3",
+        "flat": "T3-16A1"
+    },
+    "Resident210(T3-16A2)": {
+        "password": "Resident210",
+        "tower": "3",
+        "flat": "T3-16A2"
+    },
+    "Resident211(T3-16A3)": {
+        "password": "Resident211",
+        "tower": "3",
+        "flat": "T3-16A3"
+    },
+    "Resident212(T3-16A4)": {
+        "password": "Resident212",
+        "tower": "3",
+        "flat": "T3-16A4"
+    },
+    "Resident213(T3-17A1)": {
+        "password": "Resident213",
+        "tower": "3",
+        "flat": "T3-17A1"
+    },
+    "Resident214(T3-17A2)": {
+        "password": "Resident214",
+        "tower": "3",
+        "flat": "T3-17A2"
+    },
+    "Resident215(T3-17A3)": {
+        "password": "Resident215",
+        "tower": "3",
+        "flat": "T3-17A3"
+    },
+    "Resident216(T3-17A4)": {
+        "password": "Resident216",
+        "tower": "3",
+        "flat": "T3-17A4"
+    },
+    "Resident217(T3-18A1)": {
+        "password": "Resident217",
+        "tower": "3",
+        "flat": "T3-18A1"
+    },
+    "Resident218(T3-18A2)": {
+        "password": "Resident218",
+        "tower": "3",
+        "flat": "T3-18A2"
+    },
+    "Resident219(T3-18A3)": {
+        "password": "Resident219",
+        "tower": "3",
+        "flat": "T3-18A3"
+    },
+    "Resident220(T3-18A4)": {
+        "password": "Resident220",
+        "tower": "3",
+        "flat": "T3-18A4"
+    },
+    "Resident221(T3-19A1)": {
+        "password": "Resident221",
+        "tower": "3",
+        "flat": "T3-19A1"
+    },
+    "Resident222(T3-19A2)": {
+        "password": "Resident222",
+        "tower": "3",
+        "flat": "T3-19A2"
+    },
+    "Resident223(T3-19A3)": {
+        "password": "Resident223",
+        "tower": "3",
+        "flat": "T3-19A3"
+    },
+    "Resident224(T3-19A4)": {
+        "password": "Resident224",
+        "tower": "3",
+        "flat": "T3-19A4"
+    },
+    "Resident225(T4-1A1)": {
+        "password": "Resident225",
+        "tower": "4",
+        "flat": "T4-1A1"
+    },
+    "Resident226(T4-1A2)": {
+        "password": "Resident226",
+        "tower": "4",
+        "flat": "T4-1A2"
+    },
+    "Resident227(T4-1B1)": {
+        "password": "Resident227",
+        "tower": "4",
+        "flat": "T4-1B1"
+    },
+    "Resident228(T4-1B2,B3Joseph)": {
+        "password": "Resident228",
+        "tower": "4",
+        "flat": "T4-1B2,B3Joseph"
+    },
+    "Resident229(T4-1B4)": {
+        "password": "Resident229",
+        "tower": "4",
+        "flat": "T4-1B4"
+    },
+    "Resident230(T4-1B5)": {
+        "password": "Resident230",
+        "tower": "4",
+        "flat": "T4-1B5"
+    },
+    "Resident231(T4-1B6)": {
+        "password": "Resident231",
+        "tower": "4",
+        "flat": "T4-1B6"
+    },
+    "Resident232(T4-2A1)": {
+        "password": "Resident232",
+        "tower": "4",
+        "flat": "T4-2A1"
+    },
+    "Resident233(T4-2A2)": {
+        "password": "Resident233",
+        "tower": "4",
+        "flat": "T4-2A2"
+    },
+    "Resident234(T4-2B1)": {
+        "password": "Resident234",
+        "tower": "4",
+        "flat": "T4-2B1"
+    },
+    "Resident235(T4-2B2)": {
+        "password": "Resident235",
+        "tower": "4",
+        "flat": "T4-2B2"
+    },
+    "Resident236(T4-2B3)": {
+        "password": "Resident236",
+        "tower": "4",
+        "flat": "T4-2B3"
+    },
+    "Resident237(T4-2B4)": {
+        "password": "Resident237",
+        "tower": "4",
+        "flat": "T4-2B4"
+    },
+    "Resident238(T4-2B5)": {
+        "password": "Resident238",
+        "tower": "4",
+        "flat": "T4-2B5"
+    },
+    "Resident239(T4-2B6)": {
+        "password": "Resident239",
+        "tower": "4",
+        "flat": "T4-2B6"
+    },
+    "Resident240(T4-3A1)": {
+        "password": "Resident240",
+        "tower": "4",
+        "flat": "T4-3A1"
+    },
+    "Resident241(T4-3A2)": {
+        "password": "Resident241",
+        "tower": "4",
+        "flat": "T4-3A2"
+    },
+    "Resident242(T4-3B1)": {
+        "password": "Resident242",
+        "tower": "4",
+        "flat": "T4-3B1"
+    },
+    "Resident243(T4-3B2)": {
+        "password": "Resident243",
+        "tower": "4",
+        "flat": "T4-3B2"
+    },
+    "Resident244(T4-3B3)": {
+        "password": "Resident244",
+        "tower": "4",
+        "flat": "T4-3B3"
+    },
+    "Resident245(T4-3B4)": {
+        "password": "Resident245",
+        "tower": "4",
+        "flat": "T4-3B4"
+    },
+    "Resident246(T4-3B5)": {
+        "password": "Resident246",
+        "tower": "4",
+        "flat": "T4-3B5"
+    },
+    "Resident247(T4-3B6)": {
+        "password": "Resident247",
+        "tower": "4",
+        "flat": "T4-3B6"
+    },
+    "Resident248(T4-4A1)": {
+        "password": "Resident248",
+        "tower": "4",
+        "flat": "T4-4A1"
+    },
+    "Resident249(T4-4A2,B1Abraham)": {
+        "password": "Resident249",
+        "tower": "4",
+        "flat": "T4-4A2,B1Abraham"
+    },
+    "Resident250(T4-4B2,B3Jayaprakash)": {
+        "password": "Resident250",
+        "tower": "4",
+        "flat": "T4-4B2,B3Jayaprakash"
+    },
+    "Resident251(T4-4B4)": {
+        "password": "Resident251",
+        "tower": "4",
+        "flat": "T4-4B4"
+    },
+    "Resident252(T4-4B5)": {
+        "password": "Resident252",
+        "tower": "4",
+        "flat": "T4-4B5"
+    },
+    "Resident253(T4-4B6)": {
+        "password": "Resident253",
+        "tower": "4",
+        "flat": "T4-4B6"
+    },
+    "Resident254(T4-5A1,B6Hydayathulla)": {
+        "password": "Resident254",
+        "tower": "4",
+        "flat": "T4-5A1,B6Hydayathulla"
+    },
+    "Resident255(T4-5A2,B1Bidul)": {
+        "password": "Resident255",
+        "tower": "4",
+        "flat": "T4-5A2,B1Bidul"
+    },
+    "Resident256(T4-5B2,B3Krishna)": {
+        "password": "Resident256",
+        "tower": "4",
+        "flat": "T4-5B2,B3Krishna"
+    },
+    "Resident257(T4-5B4,B5Akesh)": {
+        "password": "Resident257",
+        "tower": "4",
+        "flat": "T4-5B4,B5Akesh"
+    },
+    "Resident258(T4-6A1)": {
+        "password": "Resident258",
+        "tower": "4",
+        "flat": "T4-6A1"
+    },
+    "Resident259(T4-6A2)": {
+        "password": "Resident259",
+        "tower": "4",
+        "flat": "T4-6A2"
+    },
+    "Resident260(T4-6B1)": {
+        "password": "Resident260",
+        "tower": "4",
+        "flat": "T4-6B1"
+    },
+    "Resident261(T4-6B2)": {
+        "password": "Resident261",
+        "tower": "4",
+        "flat": "T4-6B2"
+    },
+    "Resident262(T4-6B3)": {
+        "password": "Resident262",
+        "tower": "4",
+        "flat": "T4-6B3"
+    },
+    "Resident263(T4-6B4,B5Sherin)": {
+        "password": "Resident263",
+        "tower": "4",
+        "flat": "T4-6B4,B5Sherin"
+    },
+    "Resident264(T4-6B6)": {
+        "password": "Resident264",
+        "tower": "4",
+        "flat": "T4-6B6"
+    },
+    "Resident265(T4-7A1)": {
+        "password": "Resident265",
+        "tower": "4",
+        "flat": "T4-7A1"
+    },
+    "Resident266(T4-7A2)": {
+        "password": "Resident266",
+        "tower": "4",
+        "flat": "T4-7A2"
+    },
+    "Resident267(T4-7B1)": {
+        "password": "Resident267",
+        "tower": "4",
+        "flat": "T4-7B1"
+    },
+    "Resident268(T4-7B2)": {
+        "password": "Resident268",
+        "tower": "4",
+        "flat": "T4-7B2"
+    },
+    "Resident269(T4-7B3)": {
+        "password": "Resident269",
+        "tower": "4",
+        "flat": "T4-7B3"
+    },
+    "Resident270(T4-7B4,B5Dipu)": {
+        "password": "Resident270",
+        "tower": "4",
+        "flat": "T4-7B4,B5Dipu"
+    },
+    "Resident271(T4-7B6)": {
+        "password": "Resident271",
+        "tower": "4",
+        "flat": "T4-7B6"
+    },
+    "Resident272(T4-8A1)": {
+        "password": "Resident272",
+        "tower": "4",
+        "flat": "T4-8A1"
+    },
+    "Resident273(T4-8A2)": {
+        "password": "Resident273",
+        "tower": "4",
+        "flat": "T4-8A2"
+    },
+    "Resident274(T4-8B1)": {
+        "password": "Resident274",
+        "tower": "4",
+        "flat": "T4-8B1"
+    },
+    "Resident275(T4-8B2)": {
+        "password": "Resident275",
+        "tower": "4",
+        "flat": "T4-8B2"
+    },
+    "Resident276(T4-8B3)": {
+        "password": "Resident276",
+        "tower": "4",
+        "flat": "T4-8B3"
+    },
+    "Resident277(T4-8B4,B5Sajil)": {
+        "password": "Resident277",
+        "tower": "4",
+        "flat": "T4-8B4,B5Sajil"
+    },
+    "Resident278(T4-8B6)": {
+        "password": "Resident278",
+        "tower": "4",
+        "flat": "T4-8B6"
+    },
+    "Resident279(T4-9A1)": {
+        "password": "Resident279",
+        "tower": "4",
+        "flat": "T4-9A1"
+    },
+    "Resident280(T4-9A2)": {
+        "password": "Resident280",
+        "tower": "4",
+        "flat": "T4-9A2"
+    },
+    "Resident281(T4-9B1)": {
+        "password": "Resident281",
+        "tower": "4",
+        "flat": "T4-9B1"
+    },
+    "Resident282(T4-9B2)": {
+        "password": "Resident282",
+        "tower": "4",
+        "flat": "T4-9B2"
+    },
+    "Resident283(T4-9B3)": {
+        "password": "Resident283",
+        "tower": "4",
+        "flat": "T4-9B3"
+    },
+    "Resident284(T4-9B4,B5Dr)": {
+        "password": "Resident284",
+        "tower": "4",
+        "flat": "T4-9B4,B5Dr"
+    },
+    "Resident285(T4-9B6)": {
+        "password": "Resident285",
+        "tower": "4",
+        "flat": "T4-9B6"
+    },
+    "Resident286(T4-10A1)": {
+        "password": "Resident286",
+        "tower": "4",
+        "flat": "T4-10A1"
+    },
+    "Resident287(T4-10A2)": {
+        "password": "Resident287",
+        "tower": "4",
+        "flat": "T4-10A2"
+    },
+    "Resident288(T4-10B1)": {
+        "password": "Resident288",
+        "tower": "4",
+        "flat": "T4-10B1"
+    },
+    "Resident289(T4-10B2)": {
+        "password": "Resident289",
+        "tower": "4",
+        "flat": "T4-10B2"
+    },
+    "Resident290(T4-10B3)": {
+        "password": "Resident290",
+        "tower": "4",
+        "flat": "T4-10B3"
+    },
+    "Resident291(T4-10B4,B5Anoop)": {
+        "password": "Resident291",
+        "tower": "4",
+        "flat": "T4-10B4,B5Anoop"
+    },
+    "Resident292(T4-10B6)": {
+        "password": "Resident292",
+        "tower": "4",
+        "flat": "T4-10B6"
+    },
+    "Resident293(T4-11A1)": {
+        "password": "Resident293",
+        "tower": "4",
+        "flat": "T4-11A1"
+    },
+    "Resident294(T4-11A2)": {
+        "password": "Resident294",
+        "tower": "4",
+        "flat": "T4-11A2"
+    },
+    "Resident295(T4-11B1)": {
+        "password": "Resident295",
+        "tower": "4",
+        "flat": "T4-11B1"
+    },
+    "Resident296(T4-11B2)": {
+        "password": "Resident296",
+        "tower": "4",
+        "flat": "T4-11B2"
+    },
+    "Resident297(T4-11B3)": {
+        "password": "Resident297",
+        "tower": "4",
+        "flat": "T4-11B3"
+    },
+    "Resident298(T4-11B4)": {
+        "password": "Resident298",
+        "tower": "4",
+        "flat": "T4-11B4"
+    },
+    "Resident299(T4-11B5)": {
+        "password": "Resident299",
+        "tower": "4",
+        "flat": "T4-11B5"
+    },
+    "Resident300(T4-11B6)": {
+        "password": "Resident300",
+        "tower": "4",
+        "flat": "T4-11B6"
+    },
+    "Resident301(T4-12A1)": {
+        "password": "Resident301",
+        "tower": "4",
+        "flat": "T4-12A1"
+    },
+    "Resident302(T4-12A2)": {
+        "password": "Resident302",
+        "tower": "4",
+        "flat": "T4-12A2"
+    },
+    "Resident303(T4-12B1)": {
+        "password": "Resident303",
+        "tower": "4",
+        "flat": "T4-12B1"
+    },
+    "Resident304(T4-12B2)": {
+        "password": "Resident304",
+        "tower": "4",
+        "flat": "T4-12B2"
+    },
+    "Resident305(T4-12B3)": {
+        "password": "Resident305",
+        "tower": "4",
+        "flat": "T4-12B3"
+    },
+    "Resident306(T4-12B4)": {
+        "password": "Resident306",
+        "tower": "4",
+        "flat": "T4-12B4"
+    },
+    "Resident307(T4-12B5)": {
+        "password": "Resident307",
+        "tower": "4",
+        "flat": "T4-12B5"
+    },
+    "Resident308(T4-12B6)": {
+        "password": "Resident308",
+        "tower": "4",
+        "flat": "T4-12B6"
+    },
+    "Resident309(T4-13A1)": {
+        "password": "Resident309",
+        "tower": "4",
+        "flat": "T4-13A1"
+    },
+    "Resident310(T4-13A2)": {
+        "password": "Resident310",
+        "tower": "4",
+        "flat": "T4-13A2"
+    },
+    "Resident311(T4-13B1)": {
+        "password": "Resident311",
+        "tower": "4",
+        "flat": "T4-13B1"
+    },
+    "Resident312(T4-13B2)": {
+        "password": "Resident312",
+        "tower": "4",
+        "flat": "T4-13B2"
+    },
+    "Resident313(T4-13B3)": {
+        "password": "Resident313",
+        "tower": "4",
+        "flat": "T4-13B3"
+    },
+    "Resident314(T4-13B4)": {
+        "password": "Resident314",
+        "tower": "4",
+        "flat": "T4-13B4"
+    },
+    "Resident315(T4-13B5)": {
+        "password": "Resident315",
+        "tower": "4",
+        "flat": "T4-13B5"
+    },
+    "Resident316(T4-13B6)": {
+        "password": "Resident316",
+        "tower": "4",
+        "flat": "T4-13B6"
+    },
+    "Resident317(T4-14A1)": {
+        "password": "Resident317",
+        "tower": "4",
+        "flat": "T4-14A1"
+    },
+    "Resident318(T4-14A2)": {
+        "password": "Resident318",
+        "tower": "4",
+        "flat": "T4-14A2"
+    },
+    "Resident319(T4-14B1)": {
+        "password": "Resident319",
+        "tower": "4",
+        "flat": "T4-14B1"
+    },
+    "Resident320(T4-14B2)": {
+        "password": "Resident320",
+        "tower": "4",
+        "flat": "T4-14B2"
+    },
+    "Resident321(T4-14B3)": {
+        "password": "Resident321",
+        "tower": "4",
+        "flat": "T4-14B3"
+    },
+    "Resident322(T4-14B4)": {
+        "password": "Resident322",
+        "tower": "4",
+        "flat": "T4-14B4"
+    },
+    "Resident323(T4-14B5)": {
+        "password": "Resident323",
+        "tower": "4",
+        "flat": "T4-14B5"
+    },
+    "Resident324(T4-14B6)": {
+        "password": "Resident324",
+        "tower": "4",
+        "flat": "T4-14B6"
+    },
+    "Resident325(T4-15A1)": {
+        "password": "Resident325",
+        "tower": "4",
+        "flat": "T4-15A1"
+    },
+    "Resident326(T4-15A2)": {
+        "password": "Resident326",
+        "tower": "4",
+        "flat": "T4-15A2"
+    },
+    "Resident327(T4-15B1)": {
+        "password": "Resident327",
+        "tower": "4",
+        "flat": "T4-15B1"
+    },
+    "Resident328(T4-15B2)": {
+        "password": "Resident328",
+        "tower": "4",
+        "flat": "T4-15B2"
+    },
+    "Resident329(T4-15B3)": {
+        "password": "Resident329",
+        "tower": "4",
+        "flat": "T4-15B3"
+    },
+    "Resident330(T4-15B4,B5Gerry)": {
+        "password": "Resident330",
+        "tower": "4",
+        "flat": "T4-15B4,B5Gerry"
+    },
+    "Resident331(T4-15B6)": {
+        "password": "Resident331",
+        "tower": "4",
+        "flat": "T4-15B6"
+    },
+    "Resident332(T4-16A1)": {
+        "password": "Resident332",
+        "tower": "4",
+        "flat": "T4-16A1"
+    },
+    "Resident333(T4-16A2)": {
+        "password": "Resident333",
+        "tower": "4",
+        "flat": "T4-16A2"
+    },
+    "Resident334(T4-16B1)": {
+        "password": "Resident334",
+        "tower": "4",
+        "flat": "T4-16B1"
+    },
+    "Resident335(T4-16B2)": {
+        "password": "Resident335",
+        "tower": "4",
+        "flat": "T4-16B2"
+    },
+    "Resident336(T4-16B3)": {
+        "password": "Resident336",
+        "tower": "4",
+        "flat": "T4-16B3"
+    },
+    "Resident337(T4-16B4)": {
+        "password": "Resident337",
+        "tower": "4",
+        "flat": "T4-16B4"
+    },
+    "Resident338(T4-16B5)": {
+        "password": "Resident338",
+        "tower": "4",
+        "flat": "T4-16B5"
+    },
+    "Resident339(T4-16B6)": {
+        "password": "Resident339",
+        "tower": "4",
+        "flat": "T4-16B6"
+    },
+    "Resident340(T4-17A1B6Jayasree)": {
+        "password": "Resident340",
+        "tower": "4",
+        "flat": "T4-17A1B6Jayasree"
+    },
+    "Resident341(T4-17A2)": {
+        "password": "Resident341",
+        "tower": "4",
+        "flat": "T4-17A2"
+    },
+    "Resident342(T4-17B1)": {
+        "password": "Resident342",
+        "tower": "4",
+        "flat": "T4-17B1"
+    },
+    "Resident343(T4-17B2,B3Gopalakrishnan)": {
+        "password": "Resident343",
+        "tower": "4",
+        "flat": "T4-17B2,B3Gopalakrishnan"
+    },
+    "Resident344(T4-17B4)": {
+        "password": "Resident344",
+        "tower": "4",
+        "flat": "T4-17B4"
+    },
+    "Resident345(T4-17B5)": {
+        "password": "Resident345",
+        "tower": "4",
+        "flat": "T4-17B5"
+    },
+    "Resident346(T4-17B6)": {
+        "password": "Resident346",
+        "tower": "4",
+        "flat": "T4-17B6"
+    },
+    "Resident347(T5-1A1)": {
+        "password": "Resident347",
+        "tower": "5",
+        "flat": "T5-1A1"
+    },
+    "Resident348(T5-1A2)": {
+        "password": "Resident348",
+        "tower": "5",
+        "flat": "T5-1A2"
+    },
+    "Resident349(T5-1A3)": {
+        "password": "Resident349",
+        "tower": "5",
+        "flat": "T5-1A3"
+    },
+    "Resident350(T5-1A4)": {
+        "password": "Resident350",
+        "tower": "5",
+        "flat": "T5-1A4"
+    },
+    "Resident351(T5-2A1,3A1Gromine)": {
+        "password": "Resident351",
+        "tower": "5",
+        "flat": "T5-2A1,3A1Gromine"
+    },
+    "Resident352(T5-2A2)": {
+        "password": "Resident352",
+        "tower": "5",
+        "flat": "T5-2A2"
+    },
+    "Resident353(T5-2A3)": {
+        "password": "Resident353",
+        "tower": "5",
+        "flat": "T5-2A3"
+    },
+    "Resident354(T5-2A4)": {
+        "password": "Resident354",
+        "tower": "5",
+        "flat": "T5-2A4"
+    },
+    "Resident355(T5-3A2)": {
+        "password": "Resident355",
+        "tower": "5",
+        "flat": "T5-3A2"
+    },
+    "Resident356(T5-3A3)": {
+        "password": "Resident356",
+        "tower": "5",
+        "flat": "T5-3A3"
+    },
+    "Resident357(T5-3A4)": {
+        "password": "Resident357",
+        "tower": "5",
+        "flat": "T5-3A4"
+    },
+    "Resident358(T5-4A1)": {
+        "password": "Resident358",
+        "tower": "5",
+        "flat": "T5-4A1"
+    },
+    "Resident359(T5-4A2)": {
+        "password": "Resident359",
+        "tower": "5",
+        "flat": "T5-4A2"
+    },
+    "Resident360(T5-4A3)": {
+        "password": "Resident360",
+        "tower": "5",
+        "flat": "T5-4A3"
+    },
+    "Resident361(T5-4A4)": {
+        "password": "Resident361",
+        "tower": "5",
+        "flat": "T5-4A4"
+    },
+    "Resident362(T5-5A1)": {
+        "password": "Resident362",
+        "tower": "5",
+        "flat": "T5-5A1"
+    },
+    "Resident363(T5-5A2)": {
+        "password": "Resident363",
+        "tower": "5",
+        "flat": "T5-5A2"
+    },
+    "Resident364(T5-5A3)": {
+        "password": "Resident364",
+        "tower": "5",
+        "flat": "T5-5A3"
+    },
+    "Resident365(T5-5A4)": {
+        "password": "Resident365",
+        "tower": "5",
+        "flat": "T5-5A4"
+    },
+    "Resident366(T5-6A1)": {
+        "password": "Resident366",
+        "tower": "5",
+        "flat": "T5-6A1"
+    },
+    "Resident367(T5-6A2)": {
+        "password": "Resident367",
+        "tower": "5",
+        "flat": "T5-6A2"
+    },
+    "Resident368(T5-6A3)": {
+        "password": "Resident368",
+        "tower": "5",
+        "flat": "T5-6A3"
+    },
+    "Resident369(T5-6A4)": {
+        "password": "Resident369",
+        "tower": "5",
+        "flat": "T5-6A4"
+    },
+    "Resident370(T5-7A1)": {
+        "password": "Resident370",
+        "tower": "5",
+        "flat": "T5-7A1"
+    },
+    "Resident371(T5-7A2)": {
+        "password": "Resident371",
+        "tower": "5",
+        "flat": "T5-7A2"
+    },
+    "Resident372(T5-7A3)": {
+        "password": "Resident372",
+        "tower": "5",
+        "flat": "T5-7A3"
+    },
+    "Resident373(T5-7A4)": {
+        "password": "Resident373",
+        "tower": "5",
+        "flat": "T5-7A4"
+    },
+    "Resident374(T5-8A1)": {
+        "password": "Resident374",
+        "tower": "5",
+        "flat": "T5-8A1"
+    },
+    "Resident375(T5-8A2)": {
+        "password": "Resident375",
+        "tower": "5",
+        "flat": "T5-8A2"
+    },
+    "Resident376(T5-8A3)": {
+        "password": "Resident376",
+        "tower": "5",
+        "flat": "T5-8A3"
+    },
+    "Resident377(T5-8A4)": {
+        "password": "Resident377",
+        "tower": "5",
+        "flat": "T5-8A4"
+    },
+    "Resident378(T5-9A1)": {
+        "password": "Resident378",
+        "tower": "5",
+        "flat": "T5-9A1"
+    },
+    "Resident379(T5-9A2)": {
+        "password": "Resident379",
+        "tower": "5",
+        "flat": "T5-9A2"
+    },
+    "Resident380(T5-9A3)": {
+        "password": "Resident380",
+        "tower": "5",
+        "flat": "T5-9A3"
+    },
+    "Resident381(T5-9A4)": {
+        "password": "Resident381",
+        "tower": "5",
+        "flat": "T5-9A4"
+    },
+    "Resident382(T5-10A1)": {
+        "password": "Resident382",
+        "tower": "5",
+        "flat": "T5-10A1"
+    },
+    "Resident383(T5-10A2)": {
+        "password": "Resident383",
+        "tower": "5",
+        "flat": "T5-10A2"
+    },
+    "Resident384(T5-10A3)": {
+        "password": "Resident384",
+        "tower": "5",
+        "flat": "T5-10A3"
+    },
+    "Resident385(T5-10A4)": {
+        "password": "Resident385",
+        "tower": "5",
+        "flat": "T5-10A4"
+    },
+    "Resident386(T5-11A1)": {
+        "password": "Resident386",
+        "tower": "5",
+        "flat": "T5-11A1"
+    },
+    "Resident387(T5-11A2)": {
+        "password": "Resident387",
+        "tower": "5",
+        "flat": "T5-11A2"
+    },
+    "Resident388(T5-11A3)": {
+        "password": "Resident388",
+        "tower": "5",
+        "flat": "T5-11A3"
+    },
+    "Resident389(T5-11A4)": {
+        "password": "Resident389",
+        "tower": "5",
+        "flat": "T5-11A4"
+    },
+    "Resident390(T5-12A1)": {
+        "password": "Resident390",
+        "tower": "5",
+        "flat": "T5-12A1"
+    },
+    "Resident391(T5-12A2)": {
+        "password": "Resident391",
+        "tower": "5",
+        "flat": "T5-12A2"
+    },
+    "Resident392(T5-12A3)": {
+        "password": "Resident392",
+        "tower": "5",
+        "flat": "T5-12A3"
+    },
+    "Resident393(T5-12A4)": {
+        "password": "Resident393",
+        "tower": "5",
+        "flat": "T5-12A4"
+    },
+    "Resident394(T5-12AA1)": {
+        "password": "Resident394",
+        "tower": "5",
+        "flat": "T5-12AA1"
+    },
+    "Resident395(T5-12AA4)": {
+        "password": "Resident395",
+        "tower": "5",
+        "flat": "T5-12AA4"
+    },
+    "Resident396(T5-13A2)": {
+        "password": "Resident396",
+        "tower": "5",
+        "flat": "T5-13A2"
+    },
+    "Resident397(T5-13A3)": {
+        "password": "Resident397",
+        "tower": "5",
+        "flat": "T5-13A3"
+    },
+    "Resident398(T5-14A1)": {
+        "password": "Resident398",
+        "tower": "5",
+        "flat": "T5-14A1"
+    },
+    "Resident399(T5-14A2)": {
+        "password": "Resident399",
+        "tower": "5",
+        "flat": "T5-14A2"
+    },
+    "Resident400(T5-14A3)": {
+        "password": "Resident400",
+        "tower": "5",
+        "flat": "T5-14A3"
+    },
+    "Resident401(T5-14A4)": {
+        "password": "Resident401",
+        "tower": "5",
+        "flat": "T5-14A4"
+    },
+    "Resident402(T5-15A1)": {
+        "password": "Resident402",
+        "tower": "5",
+        "flat": "T5-15A1"
+    },
+    "Resident403(T5-15A2)": {
+        "password": "Resident403",
+        "tower": "5",
+        "flat": "T5-15A2"
+    },
+    "Resident404(T5-15A3)": {
+        "password": "Resident404",
+        "tower": "5",
+        "flat": "T5-15A3"
+    },
+    "Resident405(T5-15A4)": {
+        "password": "Resident405",
+        "tower": "5",
+        "flat": "T5-15A4"
+    },
+    "Resident406(T5-16A1)": {
+        "password": "Resident406",
+        "tower": "5",
+        "flat": "T5-16A1"
+    },
+    "Resident407(T5-16A2)": {
+        "password": "Resident407",
+        "tower": "5",
+        "flat": "T5-16A2"
+    },
+    "Resident408(T5-16A3)": {
+        "password": "Resident408",
+        "tower": "5",
+        "flat": "T5-16A3"
+    },
+    "Resident409(T5-16A4)": {
+        "password": "Resident409",
+        "tower": "5",
+        "flat": "T5-16A4"
+    },
+    "Resident410(T5-17A1)": {
+        "password": "Resident410",
+        "tower": "5",
+        "flat": "T5-17A1"
+    },
+    "Resident411(T5-17A2)": {
+        "password": "Resident411",
+        "tower": "5",
+        "flat": "T5-17A2"
+    },
+    "Resident412(T5-17A3)": {
+        "password": "Resident412",
+        "tower": "5",
+        "flat": "T5-17A3"
+    },
+    "Resident413(T5-17A4)": {
+        "password": "Resident413",
+        "tower": "5",
+        "flat": "T5-17A4"
+    },
+    "Resident414(T6-1A1)": {
+        "password": "Resident414",
+        "tower": "6",
+        "flat": "T6-1A1"
+    },
+    "Resident415(T6-1A2)": {
+        "password": "Resident415",
+        "tower": "6",
+        "flat": "T6-1A2"
+    },
+    "Resident416(T6-1A3)": {
+        "password": "Resident416",
+        "tower": "6",
+        "flat": "T6-1A3"
+    },
+    "Resident417(T6-1A4)": {
+        "password": "Resident417",
+        "tower": "6",
+        "flat": "T6-1A4"
+    },
+    "Resident418(T6-2A1)": {
+        "password": "Resident418",
+        "tower": "6",
+        "flat": "T6-2A1"
+    },
+    "Resident419(T6-2A2)": {
+        "password": "Resident419",
+        "tower": "6",
+        "flat": "T6-2A2"
+    },
+    "Resident420(T6-2A3)": {
+        "password": "Resident420",
+        "tower": "6",
+        "flat": "T6-2A3"
+    },
+    "Resident421(T6-2A4)": {
+        "password": "Resident421",
+        "tower": "6",
+        "flat": "T6-2A4"
+    },
+    "Resident422(T6-3A1)": {
+        "password": "Resident422",
+        "tower": "6",
+        "flat": "T6-3A1"
+    },
+    "Resident423(T6-3A2)": {
+        "password": "Resident423",
+        "tower": "6",
+        "flat": "T6-3A2"
+    },
+    "Resident424(T6-3A3)": {
+        "password": "Resident424",
+        "tower": "6",
+        "flat": "T6-3A3"
+    },
+    "Resident425(T6-3A4)": {
+        "password": "Resident425",
+        "tower": "6",
+        "flat": "T6-3A4"
+    },
+    "Resident426(T6-4A1)": {
+        "password": "Resident426",
+        "tower": "6",
+        "flat": "T6-4A1"
+    },
+    "Resident427(T6-4A2)": {
+        "password": "Resident427",
+        "tower": "6",
+        "flat": "T6-4A2"
+    },
+    "Resident428(T6-4A3)": {
+        "password": "Resident428",
+        "tower": "6",
+        "flat": "T6-4A3"
+    },
+    "Resident429(T6-4A4)": {
+        "password": "Resident429",
+        "tower": "6",
+        "flat": "T6-4A4"
+    },
+    "Resident430(T6-5A1)": {
+        "password": "Resident430",
+        "tower": "6",
+        "flat": "T6-5A1"
+    },
+    "Resident431(T6-5A2)": {
+        "password": "Resident431",
+        "tower": "6",
+        "flat": "T6-5A2"
+    },
+    "Resident432(T6-5A3)": {
+        "password": "Resident432",
+        "tower": "6",
+        "flat": "T6-5A3"
+    },
+    "Resident433(T6-5A4)": {
+        "password": "Resident433",
+        "tower": "6",
+        "flat": "T6-5A4"
+    },
+    "Resident434(T6-6A1)": {
+        "password": "Resident434",
+        "tower": "6",
+        "flat": "T6-6A1"
+    },
+    "Resident435(T6-6A2)": {
+        "password": "Resident435",
+        "tower": "6",
+        "flat": "T6-6A2"
+    },
+    "Resident436(T6-6A3)": {
+        "password": "Resident436",
+        "tower": "6",
+        "flat": "T6-6A3"
+    },
+    "Resident437(T6-6A4)": {
+        "password": "Resident437",
+        "tower": "6",
+        "flat": "T6-6A4"
+    },
+    "Resident438(T6-7A1)": {
+        "password": "Resident438",
+        "tower": "6",
+        "flat": "T6-7A1"
+    },
+    "Resident439(T6-7A2)": {
+        "password": "Resident439",
+        "tower": "6",
+        "flat": "T6-7A2"
+    },
+    "Resident440(T6-7A3)": {
+        "password": "Resident440",
+        "tower": "6",
+        "flat": "T6-7A3"
+    },
+    "Resident441(T6-7A4)": {
+        "password": "Resident441",
+        "tower": "6",
+        "flat": "T6-7A4"
+    },
+    "Resident442(T6-8A1)": {
+        "password": "Resident442",
+        "tower": "6",
+        "flat": "T6-8A1"
+    },
+    "Resident443(T6-8A2)": {
+        "password": "Resident443",
+        "tower": "6",
+        "flat": "T6-8A2"
+    },
+    "Resident444(T6-8A3)": {
+        "password": "Resident444",
+        "tower": "6",
+        "flat": "T6-8A3"
+    },
+    "Resident445(T6-8A4)": {
+        "password": "Resident445",
+        "tower": "6",
+        "flat": "T6-8A4"
+    },
+    "Resident446(T6-9A1)": {
+        "password": "Resident446",
+        "tower": "6",
+        "flat": "T6-9A1"
+    },
+    "Resident447(T6-9A2)": {
+        "password": "Resident447",
+        "tower": "6",
+        "flat": "T6-9A2"
+    },
+    "Resident448(T6-9A3)": {
+        "password": "Resident448",
+        "tower": "6",
+        "flat": "T6-9A3"
+    },
+    "Resident449(T6-9A4)": {
+        "password": "Resident449",
+        "tower": "6",
+        "flat": "T6-9A4"
+    },
+    "Resident450(T6-10A1)": {
+        "password": "Resident450",
+        "tower": "6",
+        "flat": "T6-10A1"
+    },
+    "Resident451(T6-10A2)": {
+        "password": "Resident451",
+        "tower": "6",
+        "flat": "T6-10A2"
+    },
+    "Resident452(T6-10A3)": {
+        "password": "Resident452",
+        "tower": "6",
+        "flat": "T6-10A3"
+    },
+    "Resident453(T6-10A4)": {
+        "password": "Resident453",
+        "tower": "6",
+        "flat": "T6-10A4"
+    },
+    "Resident454(T6-11A1)": {
+        "password": "Resident454",
+        "tower": "6",
+        "flat": "T6-11A1"
+    },
+    "Resident455(T6-11A2)": {
+        "password": "Resident455",
+        "tower": "6",
+        "flat": "T6-11A2"
+    },
+    "Resident456(T6-11A3)": {
+        "password": "Resident456",
+        "tower": "6",
+        "flat": "T6-11A3"
+    },
+    "Resident457(T6-11A4)": {
+        "password": "Resident457",
+        "tower": "6",
+        "flat": "T6-11A4"
+    }
+};
+
+        // --- CREDENTIALS MANAGEMENT (Stored & Managed in localStorage) ---
+        function initCredentials() {
+            if (!localStorage.getItem('kent_mahal_credentials')) {
+                const initialCreds = {
+                    admin: { password: "AdminPwd123" },
+                    dbadmin: { password: "AdminPwd123" },
+                    residents: MASTER_RESIDENTS
+                };
+                localStorage.setItem('kent_mahal_credentials', JSON.stringify(initialCreds));
+            } else {
+                let creds = JSON.parse(localStorage.getItem('kent_mahal_credentials'));
+                let updated = false;
+                if (!creds.dbadmin) {
+                    creds.dbadmin = { password: "AdminPwd123" };
+                    updated = true;
+                }
+                for (let r in MASTER_RESIDENTS) {
+                    if (!creds.residents[r]) {
+                        creds.residents[r] = MASTER_RESIDENTS[r];
+                        updated = true;
+                    }
+                }
+                if (updated) {
+                    localStorage.setItem('kent_mahal_credentials', JSON.stringify(creds));
+                }
             }
-        };
+        }
+
+        function getCredentials() {
+            return JSON.parse(localStorage.getItem('kent_mahal_credentials'));
+        }
+
+        function saveCredentials(creds) {
+            localStorage.setItem('kent_mahal_credentials', JSON.stringify(creds));
+        }
 
         const VALID_STATUSES = ["Registered", "Open", "In Progress", "Closed", "Resolved", "Rejected"];
+        let currentSession = null;
 
-        // Current session state
-        let currentSession = null; // { role: 'resident'|'admin', username: '...' }
-
-        // Initialize local storage table if empty with sample data
         function initStorage() {
             if (!localStorage.getItem('kent_mahals_tickets')) {
                 const sampleTickets = [
-                    { id: "KM-1001", resident: "Resident1", tower: "5", apt: "8A1", date: "2026-11-01", desc: "Main lobby corridor light flickering near flat entrance.", status: "In Progress" },
-                    { id: "KM-1002", resident: "Resident2", tower: "5", apt: "8A2", date: "2026-11-05", desc: "Basement parking slot water seepage during heavy rain.", status: "Open" },
-                    { id: "KM-1003", resident: "Resident3", tower: "5", apt: "8B1", date: "2026-11-08", desc: "Lift intercom audio distortion on floor 8.", status: "Registered" }
+                    { id: "KM-1001", resident: "Resident1(T1-1A1)", tower: "1", apt: "1A1", date: "2026-11-01", desc: "Main lobby corridor light flickering near flat entrance.", status: "In Progress" },
+                    { id: "KM-1002", resident: "Resident29(T1-8A1)", tower: "1", apt: "8A1", date: "2026-11-05", desc: "Basement parking slot water seepage during heavy rain.", status: "Open" },
+                    { id: "KM-1003", resident: "Resident374(T5-8A1)", tower: "5", apt: "8A1", date: "2026-11-08", desc: "Lift intercom audio distortion on floor 8.", status: "Registered" }
                 ];
                 localStorage.setItem('kent_mahals_tickets', JSON.stringify(sampleTickets));
             }
@@ -330,7 +2683,7 @@
 
         function saveTickets(tickets) {
             localStorage.setItem('kent_mahals_tickets', JSON.stringify(tickets));
-            renderDatabaseTableViewer(); // Keep central DB table viewer in sync
+            renderDatabaseTableViewer();
         }
 
         function resetDatabaseTable() {
@@ -342,25 +2695,67 @@
             }
         }
 
-        // --- AUTHENTICATION & TABS ---
+        function populateResidentDropdown(filterText = "") {
+            const select = document.getElementById('resident-username');
+            select.innerHTML = '';
+            const creds = getCredentials();
+            const residents = creds.residents;
+
+            const lowerFilter = filterText.toLowerCase();
+            let count = 0;
+            for (let uname in residents) {
+                if (uname.toLowerCase().includes(lowerFilter)) {
+                    const opt = document.createElement('option');
+                    opt.value = uname;
+                    opt.textContent = uname;
+                    select.appendChild(opt);
+                    count++;
+                    if (count > 200 && !lowerFilter) break;
+                }
+            }
+            if (count === 0) {
+                const opt = document.createElement('option');
+                opt.value = "";
+                opt.textContent = "No matching resident found";
+                select.appendChild(opt);
+            }
+        }
+
+        function filterResidents() {
+            const query = document.getElementById('resident-search').value;
+            populateResidentDropdown(query);
+        }
+
         function switchLoginTab(role) {
             const tabRes = document.getElementById('tab-resident');
             const tabAdm = document.getElementById('tab-admin');
+            const tabDbAdm = document.getElementById('tab-dbadmin');
+            
             const formRes = document.getElementById('form-resident');
             const formAdm = document.getElementById('form-admin');
+            const formDbAdm = document.getElementById('form-dbadmin');
+            
             const errDiv = document.getElementById('login-error');
             errDiv.classList.add('hidden');
 
+            // Reset tab styles
+            tabRes.className = "py-2 text-xs font-semibold rounded-lg text-slate-600 hover:text-slate-900 transition";
+            tabAdm.className = "py-2 text-xs font-semibold rounded-lg text-slate-600 hover:text-slate-900 transition";
+            tabDbAdm.className = "py-2 text-xs font-semibold rounded-lg text-slate-600 hover:text-slate-900 transition";
+
+            formRes.classList.add('hidden');
+            formAdm.classList.add('hidden');
+            formDbAdm.classList.add('hidden');
+
             if (role === 'resident') {
-                tabRes.className = "flex-1 py-2 text-sm font-semibold rounded-lg bg-white text-brand-900 shadow-sm transition";
-                tabAdm.className = "flex-1 py-2 text-sm font-semibold rounded-lg text-slate-600 hover:text-slate-900 transition";
+                tabRes.className = "py-2 text-xs font-semibold rounded-lg bg-white text-brand-900 shadow-sm transition";
                 formRes.classList.remove('hidden');
-                formAdm.classList.add('hidden');
-            } else {
-                tabAdm.className = "flex-1 py-2 text-sm font-semibold rounded-lg bg-white text-slate-900 shadow-sm transition";
-                tabRes.className = "flex-1 py-2 text-sm font-semibold rounded-lg text-slate-600 hover:text-slate-900 transition";
+            } else if (role === 'admin') {
+                tabAdm.className = "py-2 text-xs font-semibold rounded-lg bg-white text-slate-900 shadow-sm transition";
                 formAdm.classList.remove('hidden');
-                formRes.classList.add('hidden');
+            } else if (role === 'dbadmin') {
+                tabDbAdm.className = "py-2 text-xs font-semibold rounded-lg bg-white text-indigo-900 shadow-sm transition";
+                formDbAdm.classList.remove('hidden');
             }
         }
 
@@ -368,11 +2763,16 @@
             event.preventDefault();
             const errDiv = document.getElementById('login-error');
             errDiv.classList.add('hidden');
+            const creds = getCredentials();
 
             if (role === 'resident') {
                 const username = document.getElementById('resident-username').value;
                 const pwd = document.getElementById('resident-password').value;
-                if (CREDENTIALS.residents[username] && CREDENTIALS.residents[username].password === pwd) {
+                if (!username) {
+                    showError("Please select a resident profile.");
+                    return;
+                }
+                if (creds.residents[username] && creds.residents[username].password === pwd) {
                     currentSession = { role: 'resident', username: username };
                     enterApp();
                 } else {
@@ -380,11 +2780,19 @@
                 }
             } else if (role === 'admin') {
                 const pwd = document.getElementById('admin-password').value;
-                if (pwd === CREDENTIALS.admin.password) {
+                if (pwd === creds.admin.password) {
                     currentSession = { role: 'admin', username: 'Administrator' };
                     enterApp();
                 } else {
-                    showError("Invalid admin password. Default in code is AdminPwd123.");
+                    showError("Invalid admin password.");
+                }
+            } else if (role === 'dbadmin') {
+                const pwd = document.getElementById('dbadmin-password').value;
+                if (pwd === creds.dbadmin.password) {
+                    currentSession = { role: 'dbadmin', username: 'DBAdmin' };
+                    enterApp();
+                } else {
+                    showError("Invalid DBAdmin password.");
                 }
             }
         }
@@ -400,23 +2808,26 @@
             document.getElementById('user-session-bar').classList.remove('hidden');
             document.getElementById('session-info').textContent = `${currentSession.username} (${currentSession.role.toUpperCase()})`;
 
+            document.getElementById('resident-view').classList.add('hidden');
+            document.getElementById('admin-view').classList.add('hidden');
+            document.getElementById('dbadmin-view').classList.add('hidden');
+
             if (currentSession.role === 'resident') {
                 document.getElementById('resident-view').classList.remove('hidden');
-                document.getElementById('admin-view').classList.add('hidden');
-                
-                // Pre-fill apartment number & tower based on resident profile
-                const profile = CREDENTIALS.residents[currentSession.username];
+                const creds = getCredentials();
+                const profile = creds.residents[currentSession.username];
                 if (profile) {
-                    document.getElementById('ticket-apt').value = profile.apt;
+                    document.getElementById('ticket-apt').value = profile.flat;
                     document.getElementById('ticket-tower').value = profile.tower;
                 }
                 renderResidentPortal();
-            } else {
+            } else if (currentSession.role === 'admin') {
                 document.getElementById('admin-view').classList.remove('hidden');
-                document.getElementById('resident-view').classList.add('hidden');
                 renderAdminPortal();
+            } else if (currentSession.role === 'dbadmin') {
+                document.getElementById('dbadmin-view').classList.remove('hidden');
+                renderDatabaseTableViewer();
             }
-            renderDatabaseTableViewer();
         }
 
         function logout() {
@@ -424,22 +2835,82 @@
             document.getElementById('user-session-bar').classList.add('hidden');
             document.getElementById('resident-view').classList.add('hidden');
             document.getElementById('admin-view').classList.add('hidden');
+            document.getElementById('dbadmin-view').classList.add('hidden');
             document.getElementById('auth-view').classList.remove('hidden');
             document.getElementById('resident-password').value = '';
             document.getElementById('admin-password').value = '';
+            document.getElementById('dbadmin-password').value = '';
+            document.getElementById('resident-search').value = '';
+            populateResidentDropdown();
         }
 
         function refreshActiveViews() {
             if (!currentSession) return;
             if (currentSession.role === 'resident') {
                 renderResidentPortal();
-            } else {
+            } else if (currentSession.role === 'admin') {
                 renderAdminPortal();
+            } else if (currentSession.role === 'dbadmin') {
+                renderDatabaseTableViewer();
             }
-            renderDatabaseTableViewer();
         }
 
-        // --- RESIDENT PORTAL LOGIC ---
+        function openPasswordModal() {
+            document.getElementById('current-pwd').value = '';
+            document.getElementById('new-pwd').value = '';
+            document.getElementById('confirm-pwd').value = '';
+            document.getElementById('pwd-error').classList.add('hidden');
+            document.getElementById('password-modal').classList.remove('hidden');
+        }
+
+        function closePasswordModal() {
+            document.getElementById('password-modal').classList.add('hidden');
+        }
+
+        function handlePasswordChange(event) {
+            event.preventDefault();
+            const curr = document.getElementById('current-pwd').value;
+            const fresh = document.getElementById('new-pwd').value;
+            const confirm = document.getElementById('confirm-pwd').value;
+            const errEl = document.getElementById('pwd-error');
+            errEl.classList.add('hidden');
+
+            if (fresh !== confirm) {
+                errEl.textContent = "New passwords do not match.";
+                errEl.classList.remove('hidden');
+                return;
+            }
+
+            let creds = getCredentials();
+            if (currentSession.role === 'admin') {
+                if (creds.admin.password !== curr) {
+                    errEl.textContent = "Current admin password is incorrect.";
+                    errEl.classList.remove('hidden');
+                    return;
+                }
+                creds.admin.password = fresh;
+            } else if (currentSession.role === 'dbadmin') {
+                if (creds.dbadmin.password !== curr) {
+                    errEl.textContent = "Current DBAdmin password is incorrect.";
+                    errEl.classList.remove('hidden');
+                    return;
+                }
+                creds.dbadmin.password = fresh;
+            } else {
+                const uname = currentSession.username;
+                if (creds.residents[uname].password !== curr) {
+                    errEl.textContent = "Current resident password is incorrect.";
+                    errEl.classList.remove('hidden');
+                    return;
+                }
+                creds.residents[uname].password = fresh;
+            }
+
+            saveCredentials(creds);
+            alert("Password updated successfully!");
+            closePasswordModal();
+        }
+
         function handleTicketSubmit(event) {
             event.preventDefault();
             const tower = document.getElementById('ticket-tower').value;
@@ -463,12 +2934,10 @@
             tickets.unshift(newTicket);
             saveTickets(tickets);
 
-            // Reset description and date
             document.getElementById('ticket-desc').value = '';
             document.getElementById('ticket-date').value = '';
 
             renderResidentPortal();
-            renderDatabaseTableViewer();
             alert(`Ticket successfully registered with ID: ${newId}. Data saved to database table.`);
         }
 
@@ -476,7 +2945,6 @@
             const tickets = getTickets();
             const myTickets = tickets.filter(t => t.resident === currentSession.username);
 
-            // Stats calculation
             const total = myTickets.length;
             const active = myTickets.filter(t => ['Registered', 'Open', 'In Progress'].includes(t.status)).length;
             const done = myTickets.filter(t => ['Closed', 'Resolved', 'Rejected'].includes(t.status)).length;
@@ -508,7 +2976,6 @@
             });
         }
 
-        // --- ADMIN PORTAL LOGIC ---
         function renderAdminPortal() {
             renderAdminTicketsTable();
         }
@@ -579,10 +3046,10 @@
             return `<span class="px-2.5 py-1 rounded-full text-xs font-medium border ${cls}">${status}</span>`;
         }
 
-        // --- DATABASE TABLE VIEWER RENDERER ---
         function renderDatabaseTableViewer() {
             const tickets = getTickets();
             const dbTbody = document.getElementById('db-raw-tbody');
+            if (!dbTbody) return;
             dbTbody.innerHTML = '';
 
             if (tickets.length === 0) {
@@ -605,32 +3072,9 @@
             });
         }
 
-        // --- EXPORT TO CSV (Excel Compatible Backup) ---
-        function exportDataAsCSV() {
-            const tickets = getTickets();
-            if (tickets.length === 0) {
-                alert("No ticket data available to export.");
-                return;
-            }
-
-            let csvContent = "Ticket ID,Resident,Tower,Apartment,Start Date,Status,Description\n";
-            tickets.forEach(t => {
-                const cleanDesc = `"${t.desc.replace(/"/g, '""')}"`;
-                csvContent += `${t.id},${t.resident},${t.tower},${t.apt},${t.date},${t.status},${cleanDesc}\n`;
-            });
-
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.setAttribute('href', url);
-            a.setAttribute('download', `Kent_Mahal_Maintenance_Tickets_${new Date().toISOString().split('T')[0]}.csv`);
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-        }
-
-        // Initialize local storage on page load and render database table
+        initCredentials();
         initStorage();
+        populateResidentDropdown();
         renderDatabaseTableViewer();
     </script>
 </body>
